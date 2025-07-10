@@ -1,75 +1,138 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+// app/index.tsx
+import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Image,
+  ImageBackground,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+interface ServiceItem {
+  id: string;
+  name: string;
+  icon: string;
+}
 
 export default function HomeScreen() {
+  const router = useRouter();
+  const [services, setServices] = useState<ServiceItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchServices();
+  }, []);
+
+  const fetchServices = async () => {
+    try {
+      const response = await fetch('https://uberevisa.com/api/categories');
+      const data = await response.json();
+      const items = Array.isArray(data?.data) ? data.data : [];
+
+      const filtered = items
+        .filter((item: any) => {
+          const name = item?.name?.toLowerCase?.();
+          return name === 'visit visa' || name === 'pick & drop';
+        })
+        .map((item: any) => {
+          const name = item.name || 'Unnamed';
+          let icon = '';
+          if (name.toLowerCase() === 'visit visa') {
+            icon =
+              'https://uberevisa.com/seed/image/faa3d3a7-47c5-4581-beda-799b64bb0f3b_675b6efc-1f05-4f43-95c2-1b26c24dfe3e_HAMID TOURIST VISA-01-08.png';
+          } else if (name.toLowerCase() === 'pick & drop') {
+            icon =
+              'https://uberevisa.com/seed/image/9b032d83-75f1-4b05-9d78-9ae3cbe63846_fda2b440-8f69-4005-b85a-09750baf3146_pick n drop-011.png';
+          }
+
+          return {
+            id: item?.Id?.toString() ?? Math.random().toString(),
+            name,
+            icon,
+          };
+        });
+
+      setServices(filtered);
+    } catch (e) {
+      setError('Failed to load services');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePress = (name: string) => {
+    if (name.toLowerCase() === 'visit visa') {
+      router.push({ pathname: '/visitVisa', params: { serviceName: name } });
+    } else if (name.toLowerCase() === 'pick & drop') {
+      router.push({ pathname: '/bookingForm' });
+    }
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+              <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom','top']}>
+    
+    <ImageBackground
+      source={require('../../assets/images/bg-01.png')}
+      style={styles.background}
+      resizeMode="cover"
+    >
+<ScrollView contentContainerStyle={styles.container}>
+          <Image
+          source={require('../../assets/images/UBER-01.png')}
+          style={styles.image}
+          resizeMode="contain"
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+
+        <Text style={styles.chooseService}>All Services</Text>
+        {loading ? (
+          <ActivityIndicator size="large" />
+        ) : error ? (
+          <Text>{error}</Text>
+        ) : (
+          <View style={styles.serviceRow}>
+            {services.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                style={styles.serviceCard}
+                onPress={() => handlePress(item.name)}
+              >
+                <Image source={{ uri: item.icon }} style={styles.icon} />
+                <Text style={styles.serviceText}>{item.name}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </ImageBackground>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  background: { flex: 1 },
+  container: { paddingTop: 60, alignItems: 'center'},
+  image: { width: 200 },
+  chooseService: { fontSize: 18, fontWeight: 'bold', marginVertical: 20 },
+  serviceRow: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '90%',
+    gap: 20,
+  },
+  serviceCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
     alignItems: 'center',
-    gap: 8,
+    padding: 10,
+    flex: 1,
+    elevation: 4,
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
+  icon: { width: 64, height: 64 },
+  serviceText: { marginTop: 8, fontWeight: '500', fontSize: 14 },
 });
