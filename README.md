@@ -16,8 +16,6 @@
 - **User-friendly Visa Application:** Easy-to-navigate forms for visa application submission.  
 - **Real-time Status Tracking:** Monitor your visa application progress instantly.  
 - **Secure Data Handling:** User information is securely stored and transmitted.  
-- **Multi-language Support (optional):** Support for English and Arabic for wider accessibility.  
-- **Notifications:** Get timely updates about your visa status.
 
 ---
 
