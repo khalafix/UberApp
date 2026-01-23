@@ -1,10 +1,11 @@
 import agent from "@/app/api/agent";
+import { ResortsSchema } from "@/lib/schemas/resortsSchema";
 import { ActionResult } from "@/types";
 import { BookingData, BookingDetailsData, BookingStatus } from "@/types/booking";
 import { makeAutoObservable, runInAction } from "mobx";
 import { BookingSchema } from "../lib/schemas/bookingSchema";
 import { DocumentBookingSchema } from "../lib/schemas/documentBookingSchema";
-import { convertEnumToString, formatDateTime } from "../lib/schemas/utils";
+import { convertEnumToString, formatDateTime, paymentType } from "../lib/schemas/utils";
 
 
 export default class BookingStore {
@@ -27,7 +28,7 @@ export default class BookingStore {
 
   // Add Booking
   addBooking = async (
-    booking: BookingSchema | DocumentBookingSchema
+    booking: BookingSchema | DocumentBookingSchema | ResortsSchema
   ): Promise<ActionResult<string>> => {
     try {
       const response = await agent.Bookings.create(booking);
@@ -39,6 +40,21 @@ export default class BookingStore {
       return { status: "success", data: response.id };
     } catch (error) {
       console.error("Error adding booking: ", error);
+      return { status: "error", error: error as string };
+    }
+  };
+
+    // Update Booking Status
+  setPaymentTypeOfBooking = async (
+    id: string,
+    type: paymentType,
+  ): Promise<ActionResult<string>> => {
+    try {
+      await agent.Bookings.setPaymentTypeOfBooking(id, type);
+      await this.getBooking(id);
+      return { status: "success", data: `Booking Payment Type set to ${type}` };
+    } catch (error) {
+      console.error("Error updating booking Payment Type: ", error);
       return { status: "error", error: error as string };
     }
   };
@@ -157,15 +173,22 @@ getBookingByCustomerId = async (id: string) => {
   };
 
 
-  uploadImage = async (formData: FormData): Promise<ActionResult<string>> => {
-    try {
-      await agent.Bookings.uploadImage(formData);
-      return { status: "success", data: "Documents Uploaded Successfully" };
-    } catch (error:any) {
-      console.error("Error uploading Documents: ", error);
-      return { status: "error", error: error as string };
-    }
-  };
+uploadImage = async (bookingId: string, formData: FormData): Promise<ActionResult<string>> => {
+  try {
+    const result = await agent.Bookings.uploadImage(bookingId, formData);
+    console.log("Upload successful", result);
+
+    return { status: "success", data: result }; // return success properly
+  } catch (error: any) {
+    console.error("Upload failed:", error);
+    alert("Upload failed: " + (error.message || JSON.stringify(error)));
+
+    return { status: "error", error: error.message || "Unknown error" };
+  }
+};
+
+
+
 
     clearBookings = () => {
     this.bookings = null;

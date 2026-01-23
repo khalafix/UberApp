@@ -1,13 +1,17 @@
 import { FileResponseData } from "./filesTypes";
 
 export interface ServiceData {
-  id: string;
+id: string;
   name: string;
   description: string;
   price: string;
-  childPrice?: string|null;
-  expressPrice?: string|null;
-  regularPrice?: string|null;
+  childPrice?: string | null;
+  centerFee?: string | null;
+  partnerCenterFee?: string | null;
+  childCenterFee?: string | null;
+  partnerChildCenterFee?: string | null;
+  expressPrice?: string | null;
+  regularPrice?: string | null;
   rate: number;
   priceVIP?: string;
   serviceVipName?: string;
@@ -20,13 +24,18 @@ export interface ServiceData {
   categoryId?: string;
   categoryName?: string;
   serviceOptions?: ServiceOptionData[];
-  isRequiredFiles?:boolean|null;
-  requiredFiles?:string[];
+  isRequiredFiles?: boolean | null;
+  requiredFiles?: string[];
+  partnerPrice?: string | null;
+  partnerChildPrice?: string | null;
+      airportUserPrice?: string | null;
+airportUserChildPrice?: string | null;
+hasNationalityPrice ?: boolean | null;
 }
 
 export interface ServiceOptionData {
   id: string;
   name: string;
-  description?: string; 
+  description?: string;
   additionalFee: number;
 }

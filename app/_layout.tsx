@@ -2,9 +2,10 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { store, StoreContext } from '@/stores/store';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { StripeProvider } from '@stripe/stripe-react-native';
+import * as Font from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 import { enableScreens } from 'react-native-screens';
 import Toast from 'react-native-toast-message';
@@ -12,11 +13,23 @@ import { toastConfig } from './toastConfig';
 
 enableScreens();
 export default function RootLayout() {
+ const [fontsLoaded, setFontsLoaded] = useState(false);
+useEffect(() => {
+    Font.loadAsync({
+    'PentaRounded-SemiBold': require('../assets/fonts/penta-rounded-semibold.ttf'),
+      'Byom-Bold': require('../assets/fonts/Byom-BoldTrial.ttf'),
+      'Byom-Regular': require('../assets/fonts/Byom-RegularTrial.ttf'),
+      'PentaRounded-light': require('../assets/fonts/penta-rounded-light.ttf'),
+
+    }).then(() => setFontsLoaded(true));
+  }, []);
   const colorScheme = useColorScheme();
+
+
   return (
     <StoreContext.Provider value={store}>
       <StripeProvider
-        publishableKey="pk_test_51RCmC8CrP5KnRd87yL0tvQMXvZn0suHFx9J7wsVDTI6OgYrk9mCaDM0ms6IwYTSsHf4bmWqT43kYYAOB1UHfbhhw00GBwnBOPr"
+        publishableKey="pk_live_51RCmC8CrP5KnRd87a3r2xKsmQyOWHeFYYLkLupCGGhcZ5GBU0GQcFF6xefhY35lPeZqg871fZySqyDeVHhrlpbNy00o2VG0Dgj"
       >
         <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
           <Stack initialRouteName="SplashScreen" screenOptions={{ headerShown: false }}>

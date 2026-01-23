@@ -4,7 +4,7 @@ import { CardField, confirmPayment } from "@stripe/stripe-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ImageBackground, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -28,30 +28,39 @@ const CheckoutScreen = observer(() => {
     fetchBooking();
   }, [ids]);
 
-   const handlePayment = async () => {
-        setProcessing(true);
+  const handlePayment = async () => {
+    if (processing) return; // Prevent double submission
+    setProcessing(true);
 
     try {
+      // Request clientSecret from backend
       const res = await fetch("https://kbc.center/api/payment/create-payment-intent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          amount: Math.round(total * 100),
+          amount: Math.round(total * 100), // amount in smallest currency unit
           currency: "aed",
-          orderId: `ORD-${Date.now()}`,
+          orderId: booking.id,
           orderName: "Visa Service"
-        })
+        }),
       });
 
-      const json = await res.json();
-      console.log("clientSecret", json);
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData?.error || "Failed to create payment intent");
+      }
 
-      if (!json.clientSecret || !json.clientSecret.startsWith("pi_")) {
+      const json = await res.json();
+      console.log("--------clientSecret from backend:", json.clientSecret);
+
+      // Validate clientSecret format
+      if (!json.clientSecret || !json.clientSecret.includes("_secret_")) {
         throw new Error("Invalid client secret from backend");
       }
 
+      // Confirm payment with Stripe SDK
       const { error, paymentIntent } = await confirmPayment(json.clientSecret, {
-        paymentMethodType: "Card"
+        paymentMethodType: "Card",
       });
 
       if (error) {
@@ -60,7 +69,6 @@ const CheckoutScreen = observer(() => {
       } else if (paymentIntent) {
         setShowModal(false);
 
-        // ✅ Show success toast
         Toast.show({
           type: "success",
           text1: "Payment Successful",
@@ -68,150 +76,177 @@ const CheckoutScreen = observer(() => {
           position: "bottom",
         });
 
-        // ✅ Navigate to home page after short delay
         setTimeout(() => {
-          router.replace("/"); // or `router.push("/")` if you prefer
+          router.replace("/"); // Navigate home after success
         }, 2000);
-
       }
-    }
-    catch (err: any) {
+    } catch (err: any) {
       console.error("Payment error:", err);
-
-      // If Stripe provides a readable error message
-      if (err?.message) {
-        alert(`Payment error: ${err.message}`);
-      } else {
-        alert("An error occurred while processing the payment.");
-      }
-    }
-    finally {
-      setProcessing(false); // Hide loading
+      alert(`Payment error: ${err?.message || "An error occurred while processing the payment."}`);
+    } finally {
+      setProcessing(false);
       setShowModal(false);
     }
   };
+
   if (loading || !booking) return <Text>Loading...</Text>;
 
   const { requiredFiles, adultsNumber, childrenNumber, entryType, duration, processTime, totalPrice, vatPercentage = 5 } = booking;
   const vatAmount = (totalPrice * vatPercentage) / 100;
+  //const transactionFee = 3;
+  //const total = totalPrice + vatAmount + transactionFee;
   const total = totalPrice + vatAmount;
 
   return (
-                  <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom','top']}>
-    
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Check Out</Text>
-        <Ionicons name="close" size={24} onPress={() => router.push("/")} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom', 'top']}>
+      <ImageBackground
+        source={require('../../assets/images/bg123123-02.png')} // replace with your actual image path
+        style={styles.background}
+        resizeMode="cover"
+      >
+        <View style={{ flex: 1 }}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>Check Out</Text>
+            <Ionicons name="close" size={24} onPress={() => router.push("/")} />
+          </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.sectionTitle}>Visa Detail</Text>
-        <View style={styles.visaBox}>
-          <View style={styles.visaLeft}>
-            <View style={styles.visaHeader}>
-              <Text style={styles.visaTitle}>United Arab Emirates Visa</Text>
-              <Text style={styles.visaCount}>👤 x{adultsNumber + childrenNumber}</Text>
-            </View>
+          <ScrollView contentContainerStyle={styles.container}>
+            <Text style={styles.sectionTitle}>Visa Detail</Text>
+            <View style={styles.visaBox}>
+              <View style={styles.visaLeft}>
+                <View style={styles.visaHeader}>
+                  <Text style={styles.visaTitle}>United Arab Emirates Visa</Text>
+                  <Text style={styles.visaCount}>👤 x{adultsNumber + childrenNumber}</Text>
+                </View>
 
-     
-                  <View style={styles.iconRow}>
+                <View style={styles.iconRow}>
                   <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-          <Text style={styles.visaItem}> {entryType.charAt(0).toUpperCase() + entryType.slice(1)}</Text>
-                </View>
-                   <View style={styles.iconRow}>
-                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-            <Text style={styles.visaItem}> {duration}</Text>
-                </View>
-                         <View style={styles.iconRow}>
-                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-            <Text style={styles.visaItem}> Medical Insurance</Text>
+                  <Text style={styles.visaItem}> {entryType.charAt(0).toUpperCase() + entryType.slice(1)}</Text>
                 </View>
                 <View style={styles.iconRow}>
                   <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-            <Text style={styles.visaItem}> {processTime}</Text>
+                  <Text style={styles.visaItem}> {duration}</Text>
+                </View>
+                <View style={styles.iconRow}>
+                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
+                  <Text style={styles.visaItem}> Medical Insurance</Text>
+                </View>
+                <View style={styles.iconRow}>
+                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
+                  <Text style={styles.visaItem}> {processTime}</Text>
                 </View>
 
-          
-
- 
-          </View>
-          <Image source={require("../../assets/images/payment.png")} style={styles.visaImage} />
-        </View>
-
-        <View style={styles.docBox}>
-          <View style={styles.docTextContainer}>
-            <Text style={styles.docText}>Once payment is complete, please check the email for the Booking Confirmation. One of our representative will contact you soon.</Text>
-            <Pressable>
-              <Text style={styles.linkText}>Documents Requirements →</Text>
-            </Pressable>
-          </View>
-          <Image source={require("../../assets/images/pngtree.png")} style={styles.docImage} />
-        </View>
-
-        <View style={styles.priceRow}><Text>Adult x {adultsNumber}</Text><Text>AED {totalPrice}</Text></View>
-        {childrenNumber > 0 && (<View style={styles.priceRow}><Text>Child x {childrenNumber}</Text><Text>AED {totalPrice}</Text></View>)}
-        <View style={styles.priceRow}><Text style={styles.bold}>Grand Total</Text><Text style={styles.bold}>AED {totalPrice}</Text></View>
-        <View style={styles.priceRow}><Text>Estimated VAT ({vatPercentage}%)</Text><Text>AED {vatAmount}</Text></View>
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <View>
-          <Text style={styles.totalLabel}>Total (incl. VAT)</Text>
-          <Text style={styles.totalAmount}>AED {total}</Text>
-        </View>
-        <Pressable style={styles.payButton} onPress={() => setShowModal(true)}>
-          <Text style={styles.payButtonText}>Confirm & Pay</Text>
-        </Pressable>
-      </View>
-
-      <Modal animationType="slide" transparent={true} visible={showModal} onRequestClose={() => setShowModal(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Pressable style={styles.closeButton} onPress={() => setShowModal(false)}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </Pressable>
-            <Text style={styles.modalTitle}>Confirmation</Text>
-            <Text style={styles.modalAmount}>AED {total.toFixed(2)}</Text>
-            <Text style={styles.modalSubText}>UBER TRAVEL AGENCY L.L.C</Text>
-
-            <View style={styles.paymentOption}>
-              <Text style={styles.paymentText}>Add New Card</Text>
-      <CardField
-  postalCodeEnabled={false}
-  cardStyle={{
-    backgroundColor: '#ffffff',
-    textColor: '#000000',
-    placeholderColor: '#999999',
-    borderColor: '#cccccc', // optional
-  }}
-  style={{
-    width: '100%',
-    height: 50,
-    marginVertical: 10,
-  }}
-  onCardChange={(cardDetails) => setCardDetails(cardDetails)}
-/>
+              </View>
+              <Image source={require("../../assets/images/payment.png")} style={styles.visaImage} />
             </View>
-                 <Pressable
-          style={[
-            styles.applePayButton,
-            processing && { opacity: 0.6 }
-          ]}
-          onPress={handlePayment}
-          disabled={processing}
-        >
-          <Text style={styles.applePayText}>
-            {processing ? "Processing..." : "Pay"}
-          </Text>
-        </Pressable>
-            <Pressable onPress={() => setShowModal(false)}>
-              <Text style={{ textAlign: "center", marginTop: 12, color: "#007aff" }}>Cancel</Text>
+
+            <View style={styles.docBox}>
+              <View style={styles.docTextContainer}>
+                <Text style={styles.docText}>Once payment is complete, please check the email for the Booking Confirmation. One of our representative will contact you soon.</Text>
+                <Pressable>
+                  <Text style={styles.linkText}>Documents Requirements →</Text>
+                </Pressable>
+              </View>
+              <Image source={require("../../assets/images/pngtree.png")} style={styles.docImage} />
+            </View>
+
+            <View style={styles.priceRow}><Text>Adult x {adultsNumber}</Text><Text>AED {totalPrice}</Text></View>
+            {childrenNumber > 0 && (<View style={styles.priceRow}><Text>Child x {childrenNumber}</Text><Text>AED {totalPrice}</Text></View>)}
+            <View style={styles.priceRow}><Text style={styles.bold}>Grand Total</Text><Text style={styles.bold}>AED {totalPrice}</Text></View>
+            <View style={styles.priceRow}><Text>Estimated VAT ({vatPercentage}%)</Text><Text>AED {vatAmount}</Text></View>
+          </ScrollView>
+
+          <View style={styles.footer}>
+            <View>
+              <Text style={styles.totalLabel}>Total (incl. VAT)</Text>
+              <Text style={styles.totalAmount}>AED {total}</Text>
+            </View>
+            <Pressable
+              style={[
+                styles.payButton,
+                processing && { opacity: 0.6 }
+              ]}
+              onPress={() => !processing && setShowModal(true)}
+              disabled={processing}
+            >
+              <Text style={styles.payButtonText}>
+                {processing ? "Processing..." : "Confirm & Pay"}
+              </Text>
             </Pressable>
           </View>
+
+          <Modal animationType="slide" transparent={true} visible={showModal} onRequestClose={() => setShowModal(false)}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContainer}>
+                <Pressable style={styles.closeButton} onPress={() => setShowModal(false)}>
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </Pressable>
+                <Text style={styles.modalTitle}>Confirmation</Text>
+                <Text style={styles.modalAmount}>AED {total.toFixed(2)}</Text>
+                <Text style={styles.modalSubText}>UBER TRAVEL AGENCY L.L.C</Text>
+
+                <View style={styles.paymentOption}>
+                  <Text style={styles.paymentText}>Add New Card</Text>
+                  <CardField
+                    postalCodeEnabled={false}
+                    cardStyle={{
+                      backgroundColor: '#ffffff',
+                      textColor: '#000000',
+                      placeholderColor: '#999999',
+                      borderColor: '#cccccc', // optional
+                    }}
+                    style={{
+                      width: '100%',
+                      height: 50,
+                      marginVertical: 10,
+                    }}
+                    onCardChange={(cardDetails) => setCardDetails(cardDetails)}
+                  />
+                </View>
+                <Pressable
+                  style={[
+                    styles.applePayButton,
+                    processing && { opacity: 0.6 }
+                  ]}
+                  onPress={handlePayment}
+                  disabled={processing}
+                >
+                  <Text style={styles.applePayText}>
+                    {processing ? "Processing..." : "Pay"}
+                  </Text>
+                </Pressable>
+                <Pressable onPress={() => setShowModal(false)}>
+                  <Text style={{ textAlign: "center", marginTop: 12, color: "#007aff" }}>Cancel</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
+
+          {/* <PaymentModal
+            amount={total}
+            visible={showModal}
+            title="Confirm Payment"
+            description={`Total amount AED ${total.toFixed(2)}`}
+            currency="AED"
+            callbackUrl="https://uberevisa.com"
+            publicKey="2258188d-9b2e-4bbf-817a-bd74a85e0c9c"
+            apiPassword="e8374eaa-a151-47a6-b967-99dc482ecaaf"
+            onRequestClose={() => setShowModal(false)}
+            onPaymentSuccess={(data) => {
+              console.log("Payment Success:", data);
+              setShowModal(false);
+              Toast.show({ type: "success", text1: "Payment Successful" });
+              router.replace("/");
+            }}
+            onPaymentFailure={(error) => {
+              console.error("Payment Failure:", error);
+              setShowModal(false);
+              Toast.show({ type: "error", text1: "Payment Failed" });
+            }}
+          /> */}
+
         </View>
-      </Modal>
-    </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 });
@@ -220,7 +255,10 @@ export default CheckoutScreen;
 
 
 const styles = StyleSheet.create({
-   iconRow: {
+  background: {
+    flex: 1,
+  },
+  iconRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8, // or use `gap` if your React Native version supports it
@@ -306,6 +344,8 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
+    fontFamily: 'Byom-Bold',
+
   },
 
   container: {
@@ -321,18 +361,24 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: 1,
     borderColor: "#eee",
+    backgroundColor: "#fff",
+
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#000",
+    fontFamily: 'PentaRounded-SemiBold',
+
   },
   sectionTitle: {
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: "500",
     color: "#555",
     marginBottom: 12,
-    marginTop: 8,
+    marginTop: 2,
+    fontFamily: 'PentaRounded-SemiBold',
+
   },
   visaBox: {
     flexDirection: "row",
@@ -446,6 +492,8 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "600",
     fontSize: 16,
+    fontFamily: 'Byom-Bold',
+
   },
 });
 

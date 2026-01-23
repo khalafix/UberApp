@@ -1,11 +1,11 @@
-import { formatDateTime } from "@/lib/schemas/utils";
+import { paymentType } from "@/lib/schemas/utils";
 import { useStore } from "@/stores/store";
 import { Ionicons } from "@expo/vector-icons";
 import { CardField, confirmPayment } from "@stripe/stripe-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useState } from "react";
-import { Image, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Image, ImageBackground, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 
@@ -29,7 +29,15 @@ const OtherCheckoutScreen = observer(() => {
     fetchBooking();
   }, [ids]);
 
+  if (loading || !booking) return <Text>Loading...</Text>;
+
+  const { email, phone, customerName, serviceName, totalPrice, vatPercentage = 5 } = booking;
+  const vatAmount = (totalPrice * vatPercentage) / 100;
+  const total = totalPrice + vatAmount;
+
   const handlePayment = async () => {
+       const type: paymentType = "Online";
+
     setProcessing(true);
     try {
       const res = await fetch("https://kbc.center/api/payment/create-payment-intent", {
@@ -39,8 +47,8 @@ const OtherCheckoutScreen = observer(() => {
           amount: Math.round(total * 100),
           currency: "aed",
           orderId: `ORD-${Date.now()}`,
-          orderName: "Pick & Drop"
-        })
+          orderName: "Pick & Drop",
+        }),
       });
 
       const json = await res.json();
@@ -51,8 +59,10 @@ const OtherCheckoutScreen = observer(() => {
       }
 
       const { error, paymentIntent } = await confirmPayment(json.clientSecret, {
-        paymentMethodType: "Card"
+        paymentMethodType: "Card",
       });
+      
+      bookingStore.setPaymentTypeOfBooking(ids ?? "", type)
 
       if (error) {
         console.error("Stripe Payment Error:", error);
@@ -60,7 +70,6 @@ const OtherCheckoutScreen = observer(() => {
       } else if (paymentIntent) {
         setShowModal(false);
 
-        // ✅ Show success toast
         Toast.show({
           type: "success",
           text1: "Payment Successful",
@@ -68,96 +77,94 @@ const OtherCheckoutScreen = observer(() => {
           position: "bottom",
         });
 
-        // ✅ Navigate to home page after short delay
         setTimeout(() => {
-          router.replace("/"); // or `router.push("/")` if you prefer
+          router.replace("/");
         }, 2000);
-
       }
-    }
-    catch (err: any) {
+    } catch (err: any) {
       console.error("Payment error:", err);
 
-      // If Stripe provides a readable error message
       if (err?.message) {
         alert(`Payment error: ${err.message}`);
       } else {
         alert("An error occurred while processing the payment.");
       }
-    }
-    finally {
-      setProcessing(false); // Hide loading
+    } finally {
+      setProcessing(false);
       setShowModal(false);
     }
   };
-  if (loading || !booking) return <Text>Loading...</Text>;
-
-  const { email, phone, customerName,bookingDate, serviceName, totalPrice, vatPercentage = 5 } = booking;
-  const vatAmount = (totalPrice * vatPercentage) / 100;
-  const total = totalPrice + vatAmount;
 
   return (
-                  <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom','top']}>
-    
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Check Out</Text>
-        <Ionicons name="close" size={24} onPress={() => router.push("/")} />
-      </View>
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#fff" }} edges={["bottom", "top"]}>
+             <ImageBackground
+                  source={require('../../assets/images/bg123123-02.png')} // replace with your actual image path
+                  style={styles.background}
+                  resizeMode="cover"
+                >
+      <View style={{ flex: 1}}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Check Out</Text>
+          <Ionicons
+            name="close"
+            size={24}
+            color="#000"
+            onPress={() => router.push("/")}
+            accessibilityLabel="Close"
+          />
+        </View>
 
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.sectionTitle}>Booking Details</Text>
-        <View style={styles.visaBox}>
-          <View style={styles.visaLeft}>
-            <View style={styles.visaHeader}>
-              <View>
+        <ScrollView contentContainerStyle={styles.container}>
+          <Text style={styles.sectionTitle}>Booking Details</Text>
+          <View style={styles.visaBox}>
+            <View style={styles.visaLeft}>
+              <View style={styles.visaHeader}>
+                <View>
                   <View style={styles.iconRow}>
-                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-                  <Text style={styles.visaTitle}> {customerName}</Text>
-                </View>
-                   <View style={styles.iconRow}>
-                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-                  <Text style={styles.visaTitle}> {phone}</Text>
-                </View>
-                         <View style={styles.iconRow}>
-                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-                  <Text style={styles.visaTitle}> {email}</Text>
-                </View>
-                <View style={styles.iconRow}>
-                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-                  <Text style={styles.visaTitle}> {serviceName}</Text>
-                </View>
-
-                <View style={styles.iconRow}>
-                  <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
-                  <Text style={styles.visaTitle}> {formatDateTime(bookingDate.toString())}</Text>
+                    <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
+                    <Text style={styles.visaTitle}> {customerName}</Text>
+                  </View>
+                  <View style={styles.iconRow}>
+                    <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
+                    <Text style={styles.visaTitle}> {phone}</Text>
+                  </View>
+                  <View style={styles.iconRow}>
+                    <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
+                    <Text style={styles.visaTitle}> {email}</Text>
+                  </View>
+                  <View style={styles.iconRow}>
+                    <Ionicons name="checkmark-circle" size={20} color="#cc3093" />
+                    <Text style={styles.visaTitle}> {serviceName}</Text>
+                  </View>
                 </View>
               </View>
-
-
             </View>
+            <Image
+              source={require("../../assets/images/payment.png")}
+              style={styles.visaImage}
+            />
           </View>
-          <Image source={require("../../assets/images/payment.png")} style={styles.visaImage} />
+
+          <View style={styles.priceRow}>
+            <Text style={styles.bold}>Total</Text>
+            <Text style={styles.bold}>AED {totalPrice.toFixed(2)}</Text>
+          </View>
+          <View style={styles.priceRow}>
+            <Text>Estimated VAT ({vatPercentage}%)</Text>
+            <Text>AED {vatAmount.toFixed(2)}</Text>
+          </View>
+        </ScrollView>
+
+        <View style={styles.footer}>
+          <View>
+            <Text style={styles.totalLabel}>Total (incl. VAT)</Text>
+            <Text style={styles.totalAmount}>AED {total.toFixed(2)}</Text>
+          </View>
+          <Pressable style={styles.payButton} onPress={() => setShowModal(true)}>
+            <Text style={styles.payButtonText}>Confirm &amp; Pay</Text>
+          </Pressable>
         </View>
-
-
-        <View style={styles.priceRow}><Text style={styles.bold}>Total</Text><Text style={styles.bold}>AED {totalPrice}</Text></View>
-        <View style={styles.priceRow}><Text>Estimated VAT ({vatPercentage}%)</Text><Text>AED {vatAmount}</Text></View>
-
-
-      </ScrollView>
-
-      <View style={styles.footer}>
-        <View>
-          <Text style={styles.totalLabel}>Total (incl. VAT)</Text>
-          <Text style={styles.totalAmount}>AED {total}</Text>
-        </View>
-        <Pressable style={styles.payButton} onPress={() => setShowModal(true)}>
-          <Text style={styles.payButtonText}>Confirm & Pay</Text>
-        </Pressable>
-      </View>
-
-      <Modal animationType="slide" transparent={true} visible={showModal} onRequestClose={() => setShowModal(false)}>
+  <Modal animationType="slide" transparent={true} visible={showModal} onRequestClose={() => setShowModal(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Pressable style={styles.closeButton} onPress={() => setShowModal(false)}>
@@ -169,72 +176,83 @@ const OtherCheckoutScreen = observer(() => {
 
             <View style={styles.paymentOption}>
               <Text style={styles.paymentText}>Add New Card</Text>
-              <CardField
-                postalCodeEnabled={false}
-                cardStyle={{ backgroundColor: '#fff', textColor: '#000' }}
-                style={{ width: '100%', height: 50, marginVertical: 10 }}
-                onCardChange={(cardDetails) => setCardDetails(cardDetails)}
-              />
+      <CardField
+  postalCodeEnabled={false}
+  cardStyle={{
+    backgroundColor: '#ffffff',
+    textColor: '#000000',
+    placeholderColor: '#999999',
+    borderColor: '#cccccc', // optional
+  }}
+  style={{
+    width: '100%',
+    height: 50,
+    marginVertical: 10,
+  }}
+  onCardChange={(cardDetails) => setCardDetails(cardDetails)}
+/>
             </View>
-         <Pressable
-  style={[
-    styles.applePayButton,
-    processing && { opacity: 0.6 }
-  ]}
-  onPress={handlePayment}
-  disabled={processing}
->
-  <Text style={styles.applePayText}>
-    {processing ? "Processing..." : "Pay"}
-  </Text>
-</Pressable>
+                 <Pressable
+          style={[
+            styles.applePayButton,
+            processing && { opacity: 0.6 }
+          ]}
+          onPress={handlePayment}
+          disabled={processing}
+        >
+          <Text style={styles.applePayText}>
+            {processing ? "Processing..." : "Pay"}
+          </Text>
+        </Pressable>
             <Pressable onPress={() => setShowModal(false)}>
               <Text style={{ textAlign: "center", marginTop: 12, color: "#007aff" }}>Cancel</Text>
             </Pressable>
           </View>
         </View>
       </Modal>
-    </View>
+      </View>
+      </ImageBackground>
     </SafeAreaView>
   );
 });
 
 export default OtherCheckoutScreen;
 
-
 const styles = StyleSheet.create({
-
+    background: {
+    flex: 1,
+  },
   iconRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8, // or use `gap` if your React Native version supports it
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 10,
     right: 10,
     zIndex: 10,
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
     width: 30,
     height: 30,
     borderRadius: 15,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   closeButtonText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
+    backgroundColor: "rgba(0,0,0,0.67)", // fixed from #000000AA
     justifyContent: "flex-end",
   },
   modalContainer: {
     backgroundColor: "#fff",
-    padding: 10,
-    width: '100%',
-    height: '70%', // Half screen height
+    padding: 20,
+    width: "100%",
+    height: "70%",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
@@ -253,31 +271,15 @@ const styles = StyleSheet.create({
     color: "#777",
     marginBottom: 16,
   },
-  modalLabel: {
-    fontSize: 14,
-    fontWeight: "600",
-    marginBottom: 10,
-  },
   paymentOption: {
     backgroundColor: "#f1f1f1",
     padding: 14,
     borderRadius: 10,
     marginBottom: 12,
   },
-  paymentOptionDisabled: {
-    backgroundColor: "#f1f1f1",
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 12,
-    opacity: 0.5,
-  },
   paymentText: {
     fontSize: 16,
     fontWeight: "500",
-  },
-  paymentSubText: {
-    fontSize: 12,
-    color: "red",
   },
   applePayButton: {
     backgroundColor: "#cc3093",
@@ -291,10 +293,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
   },
-
   container: {
     padding: 16,
-    paddingBottom: 100, // Add space for footer
+    paddingBottom: 100, // space for footer
   },
   header: {
     padding: 10,
@@ -304,11 +305,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     borderBottomWidth: 1,
     borderColor: "#eee",
+    backgroundColor: "#fff",
+
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#000",
+        fontFamily: 'PentaRounded-SemiBold',
+
   },
   sectionTitle: {
     fontSize: 14,
@@ -336,62 +341,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: "#000",
   },
-  visaCount: {
-    fontSize: 14,
-    color: "#000",
-  },
-  visaItem: {
-    fontSize: 16,
-    color: "#000",
-    marginBottom: 10,
-  },
   visaImage: {
     width: 80,
     height: 80,
     resizeMode: "contain",
   },
-  docBox: {
-    flexDirection: "row",
-    backgroundColor: "#f5f7fb",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-  },
-  docTextContainer: {
-    flex: 1,
-    paddingRight: 12,
-  },
-  docText: {
-    fontSize: 15,
-    color: "#000",
-    marginBottom: 8,
-  },
-  linkText: {
-    color: "#007aff",
-    fontWeight: "500",
-  },
-  docImage: {
-    width: 80,
-    height: 80,
-    resizeMode: "contain",
-  },
-  priceContainer: {
-    backgroundColor: "#f5f7fb",
-    borderRadius: 16,
-    padding: 16,
-  },
   priceRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 8,
-  },
-  priceLabel: {
-    fontSize: 14,
-    color: "#000",
-  },
-  priceValue: {
-    fontSize: 14,
-    color: "#000",
   },
   bold: {
     fontWeight: "600",
@@ -430,4 +388,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-

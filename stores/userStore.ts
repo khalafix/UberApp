@@ -38,7 +38,7 @@ export default class UserStore {
 
       // reslove Mobx strict mode
       runInAction(() => {
-        console.log("userFRomStore",user);
+        console.log("userFRomStore", user);
         this.setToken(user.token);
         this.user = user;
       });
@@ -114,6 +114,22 @@ export default class UserStore {
     });
   };
 
+  deleteAccount = async (): Promise<ActionResult<string>> => {
+    try {
+      //await agent.Account.admindelete(this.user?.id!);
+      await agent.Account.delete();
+      runInAction(() => {
+        this.setToken(null);
+        this.user = null;
+      });
+
+      return { status: "success", data: "Account deleted successfully" };
+    } catch (error) {
+      console.error("Delete account error:", error);
+      return { status: "error", error: error as string };
+    }
+  };
+
   setAppLoaded = async () => {
     this.appLoaded = true;
   };
@@ -126,7 +142,7 @@ export default class UserStore {
     this.error = error;
   }
 
-setToken = async (token: string | null | undefined) => {
+  setToken = async (token: string | null | undefined) => {
     await saveToken(token);
     runInAction(() => {
       this.token = token;
@@ -134,14 +150,14 @@ setToken = async (token: string | null | undefined) => {
   };
 
   checkUserExistsByEmail = async (email: string): Promise<boolean> => {
-  try {
-    const exists = await agent.Account.checkUserExistsByEmail(email); // create this endpoint
-    return exists;
-  } catch (error) {
-    console.error("Error checking user existence", error);
-    return false;
-  }
-};
+    try {
+      const exists = await agent.Account.checkUserExistsByEmail(email); // create this endpoint
+      return exists;
+    } catch (error) {
+      console.error("Error checking user existence", error);
+      return false;
+    }
+  };
 
 
 
@@ -157,9 +173,21 @@ setToken = async (token: string | null | undefined) => {
   isCustomer = () => {
     return this.hasRole("CUSTOMER");
   };
+  isCashier = () => {
+    return this.hasRole("CASHIER");
+  };
+
+  isPartner = () => {
+    return this.hasRole("PARTNER");
+  };
 
   isUser = (): boolean => {
     return this.hasRole("USER");
   };
+
+  isAirportCashier = (): boolean => {
+    return this.hasRole("AIRPORTCASHIER");
+  };
+
 
 }

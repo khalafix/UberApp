@@ -88,6 +88,8 @@ export default function Transactions() {
                                 <Text style={styles.label}>Status: </Text>
                                 {(booking.bookingStatus)}
                             </Text>
+
+              
                         </View>
                     ))}
 

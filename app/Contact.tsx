@@ -1,163 +1,195 @@
 // app/Contact.tsx
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import React, { useEffect, useRef } from "react";
+import {
+  Alert,
+  Animated,
+  ImageBackground,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
 export default function ContactScreen() {
-    const [modalVisible, setModalVisible] = useState(false);
-    const [chatVisible, setChatVisible] = useState(false);
-    const handlePhonePress = () => Linking.openURL('tel:+97143426666');
-    const handleEmailPress = () => Linking.openURL('mailto:customercare@uberevisa.com');
-    const handleLocationPress = () => {
-        Linking.openURL('https://www.google.com/maps?q=Karama+Business+Center,+Dubai,+UAE');
-    };
-
-    const phoneNumber = '+971043426666';
-    const openWhatsApp = async () => {
-        const url = `https://wa.me/${phoneNumber}`;
-
-        const canOpen = await Linking.canOpenURL(url);
-        if (canOpen) {
-            Linking.openURL(url);
-        } else {
-            Alert.alert('Error', 'WhatsApp is not installed on this device');
-        }
-    };
-
-    return (
-              <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom', 'top']}>
-        
-        <View style={{ flex: 1, backgroundColor: '#fff' }}>
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Contact Us</Text>
-                <Ionicons name="close" size={24} onPress={() => router.push("/")} />
-            </View>
-            <ScrollView style={styles.container}>
-                <TouchableOpacity style={styles.item} onPress={handlePhonePress}>
-                    <Ionicons name="call-outline" size={24} color="#cc3093" />
-                    <Text style={styles.text}>+971 4 342 6666</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.item} onPress={handleEmailPress}>
-                    <Ionicons name="mail-outline" size={24} color="#cc3093" />
-                    <Text style={styles.text}>customercare@uberevisa.com</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.item} onPress={handleLocationPress}>
-                    <Ionicons name="location-outline" size={24} color="#cc3093" />
-                    <Text style={styles.text}>Karama Business Center, Dubai, UAE</Text>
-                </TouchableOpacity>
-                {/* <View style={styles.wrapper}>
-
-                    <Pressable style={styles.chatButton} onPress={() => setChatVisible(true)}>                  
-                           <Text style={styles.chatText}>Chat</Text>
-
-                    <ChatModal visible={chatVisible} onClose={() => setChatVisible(false)} /> </Pressable>
-                </View> */}
-
- 
-            </ScrollView>
-                 <TouchableOpacity style={styles.floatingButton} onPress={openWhatsApp}>
-      <Ionicons name="logo-whatsapp" size={28} color="#fff" />
-    </TouchableOpacity>
-        </View>
-        </SafeAreaView>
+  const handlePhonePress = () => Linking.openURL("tel:+97143426666");
+  const handleEmailPress = () =>
+    Linking.openURL("mailto:customercare@uberevisa.com");
+  const handleLocationPress = () =>
+    Linking.openURL(
+      "https://maps.app.goo.gl/RQvEEx9jCvrAsshn6"
     );
+
+  const phoneNumber = "+971043426666";
+  const openWhatsApp = async () => {
+    const url = `https://wa.me/${phoneNumber}`;
+    const canOpen = await Linking.canOpenURL(url);
+    if (canOpen) {
+      Linking.openURL(url);
+    } else {
+      Alert.alert("Error", "WhatsApp is not installed on this device");
+    }
+  };
+
+  // Animation for WhatsApp button
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulseAnim, {
+          toValue: 1.2,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulseAnim, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+  }, [pulseAnim]);
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <ImageBackground
+        source={require("../assets/images/bg123123-02.png")}
+        style={styles.background}
+        resizeMode="cover"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Contact Us</Text>
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="close" size={24} color="#000" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Content */}
+        <ScrollView
+          contentContainerStyle={styles.container}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.item} onPress={handlePhonePress}>
+              <View style={styles.iconContainer}>
+                <Ionicons name="call-outline" size={24} color="#fff" />
+              </View>
+              <Text style={styles.text}>+971 4 342 6666</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.item} onPress={handleEmailPress}>
+              <View style={[styles.iconContainer, { backgroundColor: "#cc3093" }]}>
+                <Ionicons name="mail-outline" size={24} color="#fff" />
+              </View>
+              <Text style={styles.text}>customercare@uberevisa.com</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.item} onPress={handleLocationPress}>
+              <View style={[styles.iconContainer, { backgroundColor: "#0097a7" }]}>
+                <Ionicons name="location-outline" size={24} color="#fff" />
+              </View>
+              <Text style={styles.text}>Karama Business Center, Dubai, UAE</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+
+        {/* Animated Floating WhatsApp Button */}
+        <Animated.View
+          style={[
+            styles.floatingButton,
+            {
+              transform: [{ scale: pulseAnim }],
+            },
+          ]}
+        >
+          <TouchableOpacity onPress={openWhatsApp} activeOpacity={0.8}>
+            <Ionicons name="logo-whatsapp" size={28} color="#fff" />
+          </TouchableOpacity>
+        </Animated.View>
+      </ImageBackground>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        backgroundColor: '#fff',
-        flexGrow: 1,
-        paddingTop: 10,
-        paddingBottom: 40,
-        paddingHorizontal: 20,
-    },
-      floatingButton: {
-  position: 'absolute',
-  bottom: 30, // distance from bottom
-  right: 20,  // distance from right
-  backgroundColor: '#25D366', // WhatsApp green
-  borderRadius: 30,
-  width: 60,
-  height: 60,
-  justifyContent: 'center',
-  alignItems: 'center',
-  elevation: 5, // for Android shadow
-  shadowColor: '#000', // for iOS shadow
-  shadowOffset: { width: 0, height: 2 },
-  shadowOpacity: 0.3,
-  shadowRadius: 3,
-
+  safe: {
+    flex: 1,
+    backgroundColor: "#f9f9f9",
   },
-    wrapper: {
-width:100,
-        padding: 12,
-
-        zIndex: 999,
-    },
-    chatButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#cc3093',
-        padding: 12,
-        borderRadius: 24,
-        elevation: 5,
-    },
-    chatText: {
-        color: '#fff',
-        fontWeight: 'bold',
-        marginLeft: 6,
-    },
-    modalHeader: {
-        paddingTop: 60,
-        paddingBottom: 20,
-        paddingHorizontal: 20,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        backgroundColor: '#f9f9f9',
-        alignItems: 'center',
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-    },
-    header: {
-        padding: 10,
-        paddingHorizontal: 16,
-        paddingBottom: 12,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderBottomWidth: 1,
-        borderColor: "#eee",
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#000",
-    },
-    closeButton: {
-        position: 'absolute',
-        top: 0,
-        right: 20,
-        zIndex: 10,
-
-    },
-    heading: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        marginBottom: 20,
-    },
-    item: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    text: {
-        marginLeft: 12,
-        fontSize: 16,
-        color: '#333',
-    },
+  background: {
+    flex: 1,
+    justifyContent: "center",
+  },
+  header: {
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#ffffffcc",
+    borderBottomWidth: 0.5,
+    borderColor: "#ddd",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
+  },
+  container: {
+    padding: 20,
+  },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    elevation: 5,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+  },
+  item: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f9f9f9",
+    borderRadius: 10,
+    marginVertical: 10,
+    padding: 12,
+  },
+  iconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#25D366",
+    marginRight: 12,
+  },
+  text: {
+    fontSize: 16,
+    color: "#222",
+    flex: 1,
+    fontWeight: "500",
+  },
+  floatingButton: {
+    position: "absolute",
+    bottom: 30,
+    right: 20,
+    backgroundColor: "#25D366",
+    borderRadius: 35,
+    width: 70,
+    height: 70,
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 8,
+    shadowColor: "#25D366",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 6,
+  },
 });

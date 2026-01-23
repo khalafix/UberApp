@@ -18,4 +18,7 @@ export interface ClientData {
   updateDate?: string | null;
   createdBy?: string | null;
   updatedBy?: string | null;
+  birthDate?: string | null;
+  expiredDate?: string | null;
+  issueDate?: string | null;
 }

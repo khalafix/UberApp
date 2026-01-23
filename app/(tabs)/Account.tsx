@@ -1,173 +1,370 @@
 // app/Account.tsx
-import { useStore } from '@/stores/store';
-import { BookingData } from '@/types/booking';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Toast from 'react-native-toast-message';
+import { useStore } from "@/stores/store";
+import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { observer } from "mobx-react-lite";
+import React, { useState } from "react";
+import {
+  ActivityIndicator,
+  Image,
+  ImageBackground,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 
-export default function Account() {
-    const router = useRouter();
-    const { bookingStore, userStore } = useStore();
-    const [loading, setLoading] = useState(false);
-    const [bookings, setBookings] = useState<BookingData[]>([]);
-    const {
-        userStore: {
-            isAdmin,
-            logout,
-            isLoggedIn,
-            user,
-            isUser,
-        }
-    } = useStore();
+function Account() {
+  const router = useRouter();
+  const { userStore } = useStore();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [loadingDelete, setLoadingDelete] = useState(false);
+
+  const { isLoggedIn, logout, deleteAccount, user } = userStore;
+
+  const handleDeleteAccount = async () => {
+    console.log("------------User info before delete:", userStore.user);
     
+    try {
+      setLoadingDelete(true);
+      await deleteAccount();
+      setDeleteModalVisible(false);
+      Toast.show({
+        type: "success",
+        text1: "Account deleted successfully",
+      });
+      router.replace("/");
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Failed to delete account",
+      });
+    } finally {
+      setLoadingDelete(false);
+    }
+  };
 
+  return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#F5F5F5" }}>
+      <ImageBackground
+        source={require("../../assets/images/bg123123-02.png")}
+        style={styles.background}
+      >
+        <View style={styles.container}>
+          {/* Profile Card */}
+          {isLoggedIn ? (
+            <View style={styles.profileCard}>
+              <View style={styles.imageWrapper}>
+                <Image
+                  source={require("../../assets/images/user.png")}
+                  style={styles.profileImage}
+                  onLoadStart={() => setImageLoaded(false)}
+                  onLoadEnd={() => setImageLoaded(true)}
+                />
+                {!imageLoaded && (
+                  <View style={styles.loaderOverlay}>
+                    <ActivityIndicator size="large" color="#4CAF50" />
+                  </View>
+                )}
+              </View>
 
-
-    return (
-        <>
-              <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom', 'top']}>
-        
-            <View style={styles.header}>
-                <Text style={styles.headerTitle}>Account</Text>
-                <Ionicons name="close" size={24} onPress={() => router.back()} />
+              <View>
+                <Text style={styles.nameText}>{user?.displayName}</Text>
+                <Text style={styles.emailText}>{user?.email}</Text>
+              </View>
             </View>
-
-            {userStore.isLoggedIn ? (
-                <View style={styles.container}>
-
-                    <View style={styles.iconTextRow}>
-                        <Ionicons name="person-outline" size={24} />
-                        <Text style={styles.headerTitle}>     {user?.displayName}</Text>
-                    </View>
-
-
-
-
-                    <Pressable style={styles.button} onPress={() => router.push('/customerTransactions')}>
-                        <View style={styles.iconTextRow}>
-                            <Ionicons name="calendar-outline" size={24} />
-                            <Text style={styles.buttonText}>Booking Details</Text>
-                        </View>
-                    </Pressable>
-
-
-                    <Pressable style={styles.button} onPress={() => router.push('/Policy')}>
-                        <View style={styles.iconTextRow}>
-                            <Ionicons name="shield-checkmark-outline" size={24} />
-                            <Text style={styles.buttonText}>Privacy Policy</Text>
-                        </View>
-                    </Pressable>
-         <Pressable style={styles.button} onPress={() => router.push('/FAQScreen')}>
-                    <View style={styles.iconTextRow}>
-                        <Ionicons name="shield-checkmark-outline" size={24} />
-                        <Text style={styles.buttonText}>FAQ</Text>
-                    </View>
-                </Pressable>
-                    <Pressable style={styles.button} onPress={() => router.push('/Contact')}>
-                        <View style={styles.iconTextRow}>
-                            <Ionicons name="call-outline" size={24} />
-                            <Text style={styles.buttonText}>Contact</Text>
-                        </View>
-                    </Pressable>
-
-                    <Pressable style={styles.button} onPress={async () => {
-                        await logout(); // clear state
-                        Toast.show({ type: 'success', text1: 'Logout successful' });
-                        router.replace('/'); // redirect to home
-                    }}>
-                        <View style={styles.iconTextRow}>
-                            <Ionicons name="log-out-outline" size={24} />
-                            <Text style={styles.buttonText}>Logout</Text>
-                        </View>
-                    </Pressable>
-
-                </View>
-
-            ) : (<View style={styles.container}>
-
-                <Pressable style={styles.button} onPress={() => router.push('/Policy')}>
-                    <View style={styles.iconTextRow}>
-                        <Ionicons name="shield-checkmark-outline" size={24} />
-                        <Text style={styles.buttonText}>Privacy Policy</Text>
-                    </View>
-                </Pressable>
-
-                       <Pressable style={styles.button} onPress={() => router.push('/FAQScreen')}>
-                    <View style={styles.iconTextRow}>
-                        <Ionicons name="shield-checkmark-outline" size={24} />
-                        <Text style={styles.buttonText}>FAQ</Text>
-                    </View>
-                </Pressable>
-
-                <Pressable style={styles.button} onPress={() => router.push('/Contact')}>
-                    <View style={styles.iconTextRow}>
-                        <Ionicons name="call-outline" size={24} />
-                        <Text style={styles.buttonText}>Contact</Text>
-                    </View>
-                </Pressable>
-
-                <Pressable style={styles.button} onPress={() => router.push('/Login')}>
-                    <View style={styles.iconTextRow}>
-                        <Ionicons name="log-in-outline" size={24} />
-                        <Text style={styles.buttonText}>Login</Text>
-                    </View>
-                </Pressable>
-
-
+          ) : (
+            <View style={[styles.profileCard, { justifyContent: "center" }]}>
+              <Text style={styles.nameTextWelcome}>Welcome Guest</Text>
             </View>
+          )}
+
+          <Text style={styles.settingsHeader}>Settings</Text>
+
+          <View style={styles.settingsCard}>
+            {isLoggedIn && (
+              <>
+                <TouchableOpacity
+                  style={styles.settingRow}
+                  onPress={() => router.push("/customerTransactions")}
+                >
+                  <Ionicons name="calendar-outline" size={24} color="#4CAF50" />
+                  <Text style={styles.settingText}>Booking Details</Text>
+                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                </TouchableOpacity>
+                <View style={styles.rowSeparator} />
+              </>
             )}
-</SafeAreaView>
-        </>
 
-    );
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => router.push("/Policy")}
+            >
+              <Ionicons name="shield-checkmark-outline" size={24} color="#2196F3" />
+              <Text style={styles.settingText}>Privacy Policy</Text>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+
+            <View style={styles.rowSeparator} />
+
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => router.push("/FAQScreen")}
+            >
+              <Ionicons name="help-circle-outline" size={24} color="#9C27B0" />
+              <Text style={styles.settingText}>FAQ</Text>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+
+            <View style={styles.rowSeparator} />
+
+            <TouchableOpacity
+              style={styles.settingRow}
+              onPress={() => router.push("/Contact")}
+            >
+              <Ionicons name="call-outline" size={24} color="#009688" />
+              <Text style={styles.settingText}>Contact</Text>
+              <Ionicons name="chevron-forward" size={20} color="#999" />
+            </TouchableOpacity>
+
+            <View style={styles.rowSeparator} />
+
+            {/* إذا المستخدم مسجل دخول: عرض Logout و Delete */}
+            {isLoggedIn ? (
+              <>
+                <TouchableOpacity
+                  style={styles.settingRow}
+                  onPress={async () => {
+                    await logout();
+                    Toast.show({ type: "success", text1: "Logout successful" });
+                    router.replace("/");
+                  }}
+                >
+                  <Feather name="log-out" size={24} color="#FF5722" />
+                  <Text style={[styles.settingText, { color: "#FF5722" }]}>
+                    Logout
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                </TouchableOpacity>
+
+                <View style={styles.rowSeparator} />
+
+                <TouchableOpacity
+                  style={styles.settingRow}
+                  onPress={() => setDeleteModalVisible(true)}
+                >
+                  <MaterialIcons name="delete-outline" size={24} color="#E53935" />
+                  <Text style={[styles.settingText, { color: "#E53935" }]}>
+                    Delete Account
+                  </Text>
+                  <Ionicons name="chevron-forward" size={20} color="#999" />
+                </TouchableOpacity>
+              </>
+            ) : (
+              // إذا المستخدم غير مسجل دخول: عرض زر Login
+              <TouchableOpacity
+                style={styles.settingRow}
+                onPress={() => router.push("/admin-login")}
+              >
+                <MaterialIcons name="login" size={24} color="#4CAF50" />
+                <Text style={[styles.settingText, { color: "#4CAF50" }]}>Login</Text>
+                <Ionicons name="chevron-forward" size={20} color="#999" />
+              </TouchableOpacity>
+            )}
+          </View>
+        </View>
+
+        {/* Delete Modal */}
+        <Modal transparent visible={deleteModalVisible} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalCard}>
+              <MaterialIcons name="warning" size={50} color="#E53935" />
+              <Text style={styles.modalTitle}>Delete Account?</Text>
+              <Text style={styles.modalText}>
+                This action is permanent and cannot be undone.
+              </Text>
+
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.cancelBtn}
+                  onPress={() => setDeleteModalVisible(false)}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.deleteBtn}
+                  onPress={handleDeleteAccount}
+                  disabled={loadingDelete}
+                >
+                  {loadingDelete ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.deleteText}>Delete</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+      </ImageBackground>
+    </SafeAreaView>
+  );
 }
 
+export default observer(Account);
+
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 10, backgroundColor: '#fff' },
-    header: {
-        padding: 10,
-        paddingHorizontal: 16,
-        flexDirection: "row",
-        alignItems: "center",
-        justifyContent: "space-between",
-        borderBottomWidth: 1,
-        borderColor: "#eee",
-        backgroundColor: '#fff'
+  background: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 35,
+  },
 
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: "600",
-        color: "#000",
-    },
-    closeButton: {
-        position: 'absolute',
-        top: 0,
-        right: 20,
-        zIndex: 10,
+  /* ================= Profile ================= */
+  profileCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    marginBottom: 20,
+  },
+  imageWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: "hidden",
+    marginRight: 15,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  profileImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 40,
+  },
+  loaderOverlay: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    backgroundColor: "rgba(255,255,255,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  nameText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#333",
+  },
+  nameTextWelcome: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#333",
+  },
+  emailText: {
+    fontSize: 12,
+    color: "#777",
+    marginTop: 4,
+  },
 
-    },
-    button: {
-        borderBottomWidth: 1,
-        borderColor: "#f3f3f3",
-        textAlign: 'left',
-        marginTop: 10,
-    },
-    buttonText: {
-        color: '#434343',
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginLeft: 8,
-        padding: 8,
-        // fallback if `gap` doesn't work
-    },
-    iconTextRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8, // if you're using React Native 0.71+, otherwise use `marginLeft`
-    },
+  /* ================= Settings ================= */
+  settingsHeader: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#333",
+    marginBottom: 15,
+  },
+  settingsCard: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  settingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+  },
+  settingText: {
+    fontSize: 16,
+    marginLeft: 15,
+    flex: 1,
+    color: "#333",
+  },
+  rowSeparator: {
+    height: 1,
+    backgroundColor: "#E0E0E0",
+    marginLeft: 40,
+  },
 
+  /* ================= Modal ================= */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalCard: {
+    width: "85%",
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    padding: 25,
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#333",
+    marginTop: 15,
+  },
+  modalText: {
+    fontSize: 14,
+    color: "#777",
+    textAlign: "center",
+    marginVertical: 15,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    marginTop: 10,
+  },
+  cancelBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 12,
+    paddingVertical: 12,
+    marginRight: 10,
+    alignItems: "center",
+  },
+  cancelText: {
+    color: "#555",
+    fontWeight: "600",
+  },
+  deleteBtn: {
+    flex: 1,
+    backgroundColor: "#E53935",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  deleteText: {
+    color: "#fff",
+    fontWeight: "700",
+  },
 });

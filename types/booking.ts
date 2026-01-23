@@ -33,6 +33,7 @@ export interface BookingData {
   entryType: string | null;
   duration: string | null;
   processTime: string | null;
+  nationalityId: string;
 }
 
 export interface BookingDetailsData {
@@ -71,4 +72,7 @@ export interface BookingDetailsData {
   nationalityName: string | null;
   clients: ClientData[] | null;
   securityDeposit?: string;
+  nationalityId: string;
+
 }
+

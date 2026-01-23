@@ -1,7 +1,9 @@
 import { BookingSchema } from "@/lib/schemas/bookingSchema";
 import { DocumentBookingSchema } from "@/lib/schemas/documentBookingSchema";
 import { LoginSchema, RegisterForUpdateSchema, RegisterSchema, RegisterSchemaForEmail } from "@/lib/schemas/loginSchema";
+import { ResortsSchema } from "@/lib/schemas/resortsSchema";
 import { paymentType } from "@/lib/schemas/utils";
+import { store } from "@/stores/store";
 import { BookingData, BookingDetailsData } from "@/types/booking";
 import { NationalityData } from "@/types/nationality";
 import { ServiceData } from "@/types/service";
@@ -15,43 +17,53 @@ axios.defaults.baseURL = PUBLIC_API_URL;
 
 const responseBody = <T>(response: AxiosResponse<T>) => response.data;
 
+axios.interceptors.request.use(
+  (config) => {
+    const token = store.userStore.token;
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
 axios.interceptors.response.use(
   response => response,
   (error: AxiosError) => {
+    console.error("⛔ Interceptor caught error:", {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+    });
+
     if (error.code === "ECONNABORTED" || error.message.includes("Network Error")) {
-      throw new Error(`The backend server is not reachable. Please check if the backend is running.${error.message}`);
+      return Promise.reject(new Error(`Network Error: ${error.message}`));
     }
 
-    const response = error.response;
-    const status = response?.status;
-    const data = response?.data;
+    const status = error.response?.status ?? "UNKNOWN_STATUS";
+    const data = error.response?.data;
+    let message = `HTTP ${status}`;
 
-    switch (status) {
-      case 400:
-        if (Array.isArray(data)) {
-          throw data;
-        } else {
-          throw typeof data === "string" ? new Error(data) : new Error("Bad Request");
-        }
-      case 401:
-        throw new Error("Unauthorized");
-      case 403:
-        throw new Error("Forbidden");
-      case 404:
-        throw new Error("Not Found");
-      case 500:
-        throw new Error("Internal Server Error");
-      default:
-        throw new Error("An unknown error occurred");
-    }
+
+if (data && typeof data === "object") {
+  if ("title" in data && typeof (data as any).title === "string") {
+    message = (data as any).title;
+  } else if ("message" in data && typeof (data as any).message === "string") {
+    message = (data as any).message;
+  } else {
+    message = JSON.stringify(data);
+  }
+}
+
+    return Promise.reject(new Error(message));
   }
 );
-
 const requests = {
   get: <T>(url: string) => axios.get<T>(url).then(responseBody),
   post: <T>(url: string, body: object) => axios.post<T>(url, body).then(responseBody),
   put: <T>(url: string, body: object) => axios.put<T>(url, body).then(responseBody),
-  del: <T>(url: string) => axios.delete<T>(url).then(responseBody),
+  del: <T>(url: string) => axios.post<T>(url).then(responseBody),
 };
 
 const Services = {
@@ -74,15 +86,18 @@ const Payment = {
 };
 
 const Bookings = {
-uploadImage: (formData: FormData) =>
-  axios.post<string>(`booking/upload-image`, formData, {
-    headers: {
-      "Content-Type": "multipart/form-data", // optional but safe
-    },
+
+  
+uploadImage: (id: string, formData: FormData) =>
+  axios.post<string>(`booking/${id}/upload-image`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 10000, // 10 seconds
+
+
   }).then(responseBody),
-  setPaymentTypeOfBooking: (id: string, type: paymentType) =>
-    requests.put<string>(`booking/${id}/setPaymentType`, type),
- create: (booking: BookingSchema|DocumentBookingSchema) =>
+setPaymentTypeOfBooking: (id: string, type: paymentType) =>
+  requests.put<string>(`booking/${id}/setPaymentType`, { type }),
+ create: (booking: BookingSchema|DocumentBookingSchema|ResortsSchema) =>
     requests.post<BookingData>("booking", booking),
    getById: (id: string) => requests.get<BookingDetailsData>(`booking/${id}`),
    getBookingByCustomerId: (id: string) =>
@@ -111,7 +126,8 @@ const Account = {
     requests.post<User>("account/register", user),
   registerWithEmail: (user: RegisterSchemaForEmail) =>
     requests.post<User>("account/register-with-otp", user),
-  delete: (id: string) => requests.del(`account/${id}`),
+  //admindelete: (id: string) => requests.del(`account/${id}`),
+  delete: () => requests.del("account/delete"),
   update: (id: string, userDto: RegisterForUpdateSchema) =>
     requests.put<string>(`account/${id}`, userDto),
   getById: (id: string) =>

@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
   ActivityIndicator,
+  ImageBackground,
   ScrollView,
   StyleSheet,
   Text,
@@ -45,8 +46,12 @@ const BookingSearchScreen = () => {
 
   return (
               <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom','top']}>
-
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+      <ImageBackground
+        source={require('../../assets/images/bg123123-02.png')} // replace with your actual image path
+        style={styles.background}
+        resizeMode="cover"
+      >
+    <View style={{ flex: 1 }}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Track your Booking</Text>
         <Ionicons name="close" size={24} onPress={() => router.push("/")} />
@@ -116,6 +121,7 @@ const BookingSearchScreen = () => {
       </ScrollView>
 
     </View>
+    </ImageBackground>
 </SafeAreaView>
   );
 };
@@ -128,20 +134,26 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     paddingHorizontal: 20,
   },
+  background: {
+    flex: 1,
+  },
   header: {
+    padding: 10,
     paddingHorizontal: 16,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: 1,
     borderColor: "#eee",
-    padding: 10,
+    backgroundColor: "#fff",
 
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "600",
     color: "#000",
+    fontFamily: 'PentaRounded-SemiBold',
+
   },
   closeButton: {
     position: 'absolute',
@@ -173,6 +185,8 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
     marginBottom: 14,
+        fontFamily: 'PentaRounded-SemiBold',
+
   },
   button: {
     backgroundColor: '#cc3093',
@@ -184,6 +198,8 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 16,
+        fontFamily: 'Byom-Bold',
+
   },
   error: {
     color: 'red',

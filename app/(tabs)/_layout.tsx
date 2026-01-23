@@ -36,6 +36,7 @@ export default function TabLayout() {
           fontSize: 12,
           fontWeight: '600',
           marginTop: 2,
+          fontFamily: 'PentaRounded-SemiBold',
         },
         tabBarIconStyle: {
           marginBottom: -2,
@@ -60,7 +61,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
       <Tabs.Screen
         name="Track"
         options={{
@@ -72,14 +72,13 @@ export default function TabLayout() {
               borderTopWidth: focused ? 3 : 0,
               borderTopColor: '#cc3093',
               width: '100%',
-              paddingTop:2,
+              paddingTop: 2,
             }}>
               <Ionicons name="search-outline" size={24} color={color} />
             </View>
           ),
         }}
       />
-
       <Tabs.Screen
         name="Account"
         options={{

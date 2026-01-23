@@ -26,6 +26,8 @@ export const bookingSchema = z.object({
   isVIP: z.boolean().default(false),
   serviceOptionId: z.string().optional(),
   totalPrice: z.number().nullable().optional(),
+    nationalityId: z.string().min(1, "Nationality ID is required"),
+
 });
 
 export type BookingSchema = z.infer<typeof bookingSchema>;

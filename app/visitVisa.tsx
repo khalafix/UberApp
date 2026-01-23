@@ -3,6 +3,7 @@ import { router, Stack } from 'expo-router';
 import React, { useState } from 'react';
 import {
     FlatList,
+    ImageBackground,
     Modal,
     Pressable,
     ScrollView,
@@ -43,13 +44,13 @@ const requirementDetailsByCountry: {
 } = {
     'United Arab Emirates': {
         'Copy of Passport': 'Each visitors passport should be valid for a minimum of 6 months.',
-        'Passport Size Photo': 'Each visitors passport-size photograph,taken against a white background.',
+        'Passport Size Photo': 'Each visitors passport-size photograph with white background.',
         'Passport & UAE Residency of a Relative': 'For some nationalities, applicants must submit a passport copy and GCC residency of an immediate relative.',
         'Flight Tickets & Hotel Booking': 'Submit round-trip flight tickets and a confirmed hotel reservation.',
     },
     'Kingdom of Saudi Arabia': {
         'Copy of Passport': 'Each visitors passport should be valid for a minimum of 6 months.',
-        'Passport Size Photo': 'Each visitors passport-size photograph,taken against a white background.',
+        'Passport Size Photo': 'Each visitors passport-size photograph with white background.',
         'GCC Residency (If applicable)': 'A copy of GCC Residency shoild be valid for a minimum of 6 months.',
     },
 };
@@ -61,7 +62,11 @@ const VisitVisaScreen = () => {
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }} edges={['bottom', 'top']}>
-
+ <ImageBackground
+    source={require('../assets/images/bg123123-02.png')} // replace with your actual image path
+    style={styles.background}
+    resizeMode="cover"
+  >
             <View style={{ flex: 1 }}>
                 <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 180 }}>
                     <>
@@ -202,7 +207,7 @@ const VisitVisaScreen = () => {
                                 <Text style={styles.nextButtonText}>Next</Text>
                             </TouchableOpacity>
                         </View>
-                        <View style={styles.footerTabs}>
+                        {/* <View style={styles.footerTabs}>
                             <View style={styles.footerTabItem}>
                                 <Text style={styles.footerTabIcon}>🌐</Text>
                                 <Text style={styles.footerTabLabelActive}>New Visa</Text>
@@ -217,15 +222,19 @@ const VisitVisaScreen = () => {
                                     <Text style={styles.footerTabLabelInactive}>Visa Status</Text>
                                 </View>
                             </TouchableOpacity>
-                        </View>
+                        </View> */}
                     </View>
                 </View>
             </View>
+            </ImageBackground>
         </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
+    background: {
+  flex: 1,
+},
     footer: {
         position: "absolute",
         bottom: 0,
@@ -242,9 +251,10 @@ const styles = StyleSheet.create({
     container:
     {
         flex: 1,
-        backgroundColor: '#fff',
-        padding: 20,
-        marginTop: 0,
+        backgroundColor: 'rgba(255,255,255,0.5)',
+        paddingTop: 10,
+        paddingBottom: 40,
+        paddingHorizontal: 20,
     },
     closeButton: {
         position: 'absolute',
@@ -256,11 +266,15 @@ const styles = StyleSheet.create({
         fontSize: 26,
         fontWeight: '600',
         marginBottom: 10,
+          fontFamily: 'PentaRounded-SemiBold',
+
     },
     subtitle: {
         fontSize: 16,
         fontWeight: '500',
         marginBottom: 10,
+          fontFamily: 'PentaRounded-SemiBold',
+
     },
     selector: {
         borderWidth: 1,
@@ -274,6 +288,8 @@ const styles = StyleSheet.create({
     },
     selectorText: {
         fontSize: 16,
+          fontFamily: 'PentaRounded-SemiBold',
+
     },
     requirementsBox: {
         marginBottom: 30,
@@ -281,11 +297,15 @@ const styles = StyleSheet.create({
     requirementsTitle: {
         fontSize: 16,
         fontWeight: '600',
+          fontFamily: 'PentaRounded-SemiBold',
+
     },
     requirementsSubtitle: {
         fontSize: 14,
         color: '#888',
         marginTop: 4,
+          fontFamily: 'PentaRounded-SemiBold',
+
     },
     requirementItemContainer: {
         paddingVertical: 20,
@@ -333,6 +353,8 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontWeight: '600',
         fontSize: 16,
+        fontFamily: 'Byom-Bold',
+
     },
     buttonWrapper: {
         width: '100%',

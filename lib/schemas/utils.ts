@@ -1,3 +1,4 @@
+import * as Network from 'expo-network';
 import * as SecureStore from 'expo-secure-store';
 
 export function capitalize(str: string) {
@@ -87,9 +88,9 @@ export function convertEnumToString<T>(value: number, enumType: T) {
   return enumType[value as unknown as keyof typeof enumType];
 }
 
-export interface paymentType {
-  type: string;
-}
+export type paymentType = "Online" | "Direct";
+
+
 export interface CanceledReason {
   reason: string;
 }
@@ -102,4 +103,26 @@ const uriToBlob = async (uri: string): Promise<Blob> => {
   const response = await fetch(uri);
   const blob = await response.blob();
   return blob;
+};
+
+
+interface NetworkState {
+  isConnected: boolean;
+  isInternetReachable: boolean;
+}
+
+export const checkNetworkConnectivity = async (): Promise<NetworkState> => {
+  try {
+    const state = await Network.getNetworkStateAsync();
+    return {
+      isConnected: state.isConnected || false,
+      isInternetReachable: state.isInternetReachable || false
+    };
+  } catch (error) {
+    console.error('Network check error:', error);
+    return {
+      isConnected: false,
+      isInternetReachable: false
+    };
+  }
 };
