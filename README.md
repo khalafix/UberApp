@@ -6,8 +6,7 @@
 
 ## Table of Contents
 
-- [Features](#features)  
-- [Screenshots](#screenshots)  
+- [Features](#features)   
 - [Installation](#installation)  
 - [Usage](#usage)  
 - [Tech Stack](#tech-stack)  
@@ -24,12 +23,6 @@
 - **Secure Data Handling:** User information is securely stored and transmitted.  
 - **Multi-language Support (optional):** Support for English and Arabic for wider accessibility.  
 - **Notifications:** Get timely updates about your visa status.
-
----
-
-## Screenshots
-
-*Include screenshots of your app here to give users a visual preview.*
 
 ---
 
