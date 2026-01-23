@@ -8,10 +8,6 @@
 
 - [Features](#features)   
 - [Installation](#installation)  
-- [Usage](#usage)  
-- [Tech Stack](#tech-stack)  
-- [Contributing](#contributing)  
-- [License](#license)  
 
 ---
 
