@@ -2,7 +2,7 @@
   "resolutions": {
     "react-native": "0.81.5"
   },
-  "name": "uberapp",
+  "name": "uta",
   "main": "expo-router/entry",
   "version": "21",
   "scripts": {

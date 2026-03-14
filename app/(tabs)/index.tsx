@@ -145,7 +145,7 @@ function HomeScreen() {
         {/* HEADER */}
         <View style={styles.header}>
           <Image
-            source={require('../../assets/images/logo_uber-01.png')}
+            source={require('../../assets/images/utravelagency-light.png')}
             style={styles.image}
             resizeMode="contain"
           />

@@ -22,7 +22,7 @@ const PrivacyPolicyScreen = () => {
 
                 <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
                     <Text style={styles.section}>
-                        Welcome to Uber Travel Agency ("we," "our," "us"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website, mobile application, or services (collectively, the "Platform").
+                        Welcome to UTA ("we," "our," "us"). We are committed to protecting your privacy and ensuring the security of your personal information. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our website, mobile application, or services (collectively, the "Platform").
                     </Text>
 
                     <Text style={styles.section}>

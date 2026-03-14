@@ -1,4 +1,4 @@
-package com.essdeveloper.UberApp
+package com.essdeveloper.uta
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

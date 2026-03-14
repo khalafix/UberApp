@@ -9,7 +9,7 @@
 //     "newArchEnabled": true,
 //     "ios": {
 //       "supportsTablet": true,
-//       "bundleIdentifier": "com.essdeveloper.UberApp",
+//       "bundleIdentifier": "com.essdeveloper.uta",
 //       "infoPlist": {
 //         "ITSAppUsesNonExemptEncryption": false
 //       }
@@ -34,7 +34,7 @@
 //         "backgroundColor": "#ffffff"
 //       },
 //       "edgeToEdgeEnabled": true,
-//       "package": "com.essdeveloper.UberApp",
+//       "package": "com.essdeveloper.uta",
 //       "jsEngine": "hermes"
 //     },
 //     "web": {
@@ -70,16 +70,16 @@
 
 {
   "expo": {
-    "name": "UberApp",
-    "slug": "UberApp",
+    "name": "UTA",
+    "slug": "UTA",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "uberapp",
+    "scheme": "uta",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.essdeveloper.UberApp",
+      "bundleIdentifier": "com.essdeveloper.uta",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "This app uses the camera to allow users to upload passport or document photos for visa application assistance and profile verification.",
@@ -106,7 +106,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.essdeveloper.UberApp",
+      "package": "com.essdeveloper.uta",
       "jsEngine": "hermes"
     },
     "web": {

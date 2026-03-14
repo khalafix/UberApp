@@ -1,4 +1,4 @@
-package com.essdeveloper.UberApp
+package com.essdeveloper.uta
 
 import android.app.Application
 import android.content.res.Configuration

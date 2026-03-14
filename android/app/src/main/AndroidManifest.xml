@@ -40,8 +40,8 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="uberapp"/>
-        <data android:scheme="exp+uberapp"/>
+        <data android:scheme="uta"/>
+        <data android:scheme="exp+uta"/>
       </intent-filter>
     </activity>
   </application>

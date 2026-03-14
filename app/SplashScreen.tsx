@@ -15,13 +15,13 @@ export default function SplashScreen() {
     <View style={styles.container}>
       {/* Company Logo */}
       <Image
-        source={require('../assets/images/UBER-01.png')} // adjust path if needed
+        source={require('../assets/images/utravelagency-light.png')} // adjust path if needed
         style={styles.logoImage}
         resizeMode="contain"
       />
       
       {/* App Name */}
-      <Text style={styles.logoText}>Welcome To Uber Travel</Text>
+      <Text style={styles.logoText}>Welcome To UTA</Text>
 
       {/* Spinner */}
       <ActivityIndicator size="large" color="#cc3093" />

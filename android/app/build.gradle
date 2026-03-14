@@ -86,13 +86,13 @@ android {
 
     compileSdk 36
 
-    namespace 'com.essdeveloper.UberApp'
+    namespace 'com.essdeveloper.uta'
     defaultConfig {
-        applicationId 'com.essdeveloper.UberApp'
+        applicationId 'com.essdeveloper.uta'
         minSdkVersion 25
         targetSdkVersion 36
-        versionCode 35
-        versionName "20"
+        versionCode 1
+        versionName "1.0"
     }
     signingConfigs {
         // debug {
