@@ -1,50 +1,80 @@
-# Welcome to your Expo app 👋
+# Uber App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+**Uber App** is a React Native mobile application designed to simplify and streamline the process of obtaining a UAE visa. Whether you're traveling for business, tourism, or residency, this app provides users with a smooth, user-friendly interface to apply, track, and manage their visa applications quickly and efficiently.
 
-## Get started
+---
 
-1. Install dependencies
+## Table of Contents
 
-   ```bash
-   npm install
-   ```
+- [Features](#features)   
+- [Installation](#installation)  
 
-2. Start the app
+---
 
-   ```bash
-   npx expo start
-   ```
+## Features
 
-In the output, you'll find options to open the app in a
+- **User-friendly Visa Application:** Easy-to-navigate forms for visa application submission.  
+- **Real-time Status Tracking:** Monitor your visa application progress instantly.  
+- **Secure Data Handling:** User information is securely stored and transmitted.  
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+---
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## Installation
 
-## Get a fresh project
+### Prerequisites
 
-When you're ready, run:
+- Node.js (>=14.x)  
+- npm or yarn  
+- React Native CLI or Expo CLI installed globally  
+- Android Studio / Xcode for emulators or a physical device  
+
+### Steps
+
+Clone the repository:
 
 ```bash
-npm run reset-project
-```
+git clone https://github.com/your-username/uber-app.git
+cd uber-app
+Install dependencies:
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+bash
+Copy code
+npm install
+# or
+yarn install
+Run the app on Android:
 
-## Learn more
+bash
+Copy code
+npx react-native run-android
+Run the app on iOS:
 
-To learn more about developing your project with Expo, look at the following resources:
+bash
+Copy code
+npx react-native run-ios
+Usage
+Open the app on your device or emulator.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Fill in your personal details and visa requirements.
 
-## Join the community
+Submit your application and track the status from the dashboard.
 
-Join our community of developers creating universal apps.
+Receive notifications and updates directly within the app.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Tech Stack
+React Native — for cross-platform mobile app development
+
+Redux / Context API — for state management (if used)
+
+Axios / Fetch — for API calls
+
+Firebase / Node.js backend — (if applicable, mention backend)
+
+React Navigation — for smooth navigation between screens
+
+Contributing
+Contributions are welcome! If you find bugs or want to suggest features, please open an issue or submit a pull request.
+
+License
+This project is licensed under the MIT License — see the LICENSE file for details.
+
