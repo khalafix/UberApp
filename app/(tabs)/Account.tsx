@@ -1,6 +1,6 @@
 // app/Account.tsx
-import { useStore } from "@/stores/store";
 import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
@@ -16,35 +16,47 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
+import { useUser } from '../usercontext/UserContext';
 
 function Account() {
   const router = useRouter();
-  const { userStore } = useStore();
   const [imageLoaded, setImageLoaded] = useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [loadingDelete, setLoadingDelete] = useState(false);
 
-  const { isLoggedIn, logout, deleteAccount, user } = userStore;
+  const { user, clearUser } = useUser();
 
-  const handleDeleteAccount = async () => {
-    console.log("------------User info before delete:", userStore.user);
-    
+  // const handleDeleteAccount = async () => {
+  //   console.log("------------User info before delete:", userStore.user);
+
+  //   try {
+  //     setLoadingDelete(true);
+  //     await deleteAccount();
+  //     setDeleteModalVisible(false);
+  //     Toast.show({
+  //       type: "success",
+  //       text1: "Account deleted successfully",
+  //     });
+  //     router.replace("/");
+  //   } catch (error) {
+  //     Toast.show({
+  //       type: "error",
+  //       text1: "Failed to delete account",
+  //     });
+  //   } finally {
+  //     setLoadingDelete(false);
+  //   }
+  // };
+
+  const logout = async () => {
     try {
-      setLoadingDelete(true);
-      await deleteAccount();
-      setDeleteModalVisible(false);
-      Toast.show({
-        type: "success",
-        text1: "Account deleted successfully",
-      });
-      router.replace("/");
+      await AsyncStorage.removeItem("token");
+      await clearUser();
+
+      Toast.show({ type: 'success', text1: 'Logout successful' });
+      router.replace('/');
     } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Failed to delete account",
-      });
-    } finally {
-      setLoadingDelete(false);
+      console.log("Logout error:", error);
     }
   };
 
@@ -56,7 +68,7 @@ function Account() {
       >
         <View style={styles.container}>
           {/* Profile Card */}
-          {isLoggedIn ? (
+          {user ? (
             <View style={styles.profileCard}>
               <View style={styles.imageWrapper}>
                 <Image
@@ -73,7 +85,7 @@ function Account() {
               </View>
 
               <View>
-                <Text style={styles.nameText}>{user?.displayName}</Text>
+                <Text style={styles.nameText}>{user.firstName} {user.lastName}</Text>
                 <Text style={styles.emailText}>{user?.email}</Text>
               </View>
             </View>
@@ -86,7 +98,7 @@ function Account() {
           <Text style={styles.settingsHeader}>Settings</Text>
 
           <View style={styles.settingsCard}>
-            {isLoggedIn && (
+            {user && (
               <>
                 <TouchableOpacity
                   style={styles.settingRow}
@@ -134,15 +146,11 @@ function Account() {
             <View style={styles.rowSeparator} />
 
             {/* إذا المستخدم مسجل دخول: عرض Logout و Delete */}
-            {isLoggedIn ? (
+            {user ? (
               <>
                 <TouchableOpacity
                   style={styles.settingRow}
-                  onPress={async () => {
-                    await logout();
-                    Toast.show({ type: "success", text1: "Logout successful" });
-                    router.replace("/");
-                  }}
+                  onPress={() => logout()}
                 >
                   <Feather name="log-out" size={24} color="#FF5722" />
                   <Text style={[styles.settingText, { color: "#FF5722" }]}>
@@ -198,7 +206,7 @@ function Account() {
 
                 <TouchableOpacity
                   style={styles.deleteBtn}
-                  onPress={handleDeleteAccount}
+                  //onPress={handleDeleteAccount}
                   disabled={loadingDelete}
                 >
                   {loadingDelete ? (

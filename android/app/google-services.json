@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "822375959214",
+    "project_id": "uta-app-8c95a",
+    "storage_bucket": "uta-app-8c95a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:822375959214:android:40226d38eea3a32869bb3f",
+        "android_client_info": {
+          "package_name": "com.essdeveloper.uta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-lrr1d9wlnqCWAuCcnW9ifBDK57MpZzY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

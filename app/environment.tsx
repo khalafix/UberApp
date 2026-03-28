@@ -20,7 +20,8 @@ export const COMPANY_PHONE_NUMBER = "+(971) 4342-6666";
 export const COMPANY_MAIL = "info@example.com";
 export const COMPANY_NAME = "Emirates Secretarial Services";
 
-
+//export const NEXT_PUBLIC_API_BASE_URL_NEW="https://localhost:44381/api/v1/";
+export const NEXT_PUBLIC_API_BASE_URL_NEW="https://api.ubertravelagency.com/api/v1/";
 
 export const PUBLIC_API_URL = "https://uberevisa.com/api/";
 

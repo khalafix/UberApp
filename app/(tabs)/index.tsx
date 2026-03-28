@@ -1,11 +1,11 @@
 // app/index.tsx
-import { useStore } from '@/stores/store';
 import { Feather } from '@expo/vector-icons';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import messaging from '@react-native-firebase/messaging';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { observer } from 'mobx-react-lite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   ImageBackground,
   Modal,
@@ -14,10 +14,13 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { NEXT_PUBLIC_API_BASE_URL_NEW } from '../environment';
+import '../firebase';
+import { useUser } from '../usercontext/UserContext';
 
 interface ServiceItem {
   id: string;
@@ -31,14 +34,132 @@ function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [soonVisible, setSoonVisible] = useState(false);
-  const {
-    userStore: { isAdmin, logout, isLoggedIn, user, isUser },
-  } = useStore();
+  const { user, clearUser } = useUser();
+
+  const [storedToken, setStoredToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadToken = async () => {
+      const token = await AsyncStorage.getItem("token");
+      setStoredToken(token);
+    };
+
+    loadToken();
+  }, []);
+
+  // useEffect(() => {
+  //   if (!storedToken) return; // ⛔ wait until token is loaded
+
+  //   async function setupFCM() {
+  //     const authStatus = await messaging().requestPermission();
+
+  //     const enabled =
+  //       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+  //       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+  //     if (!enabled) {
+  //       console.log('Permission not granted');
+  //       return;
+  //     }
+
+  //     const fcmToken = await messaging().getToken();
+  //     console.log('🔥 FCM TOKEN:', fcmToken);
+
+  //     if (user?.username && storedToken && fcmToken) {
+  //       fetch(`${NEXT_PUBLIC_API_BASE_URL_NEW}notifications/${user.username}`, {
+  //         method: 'POST',
+  //         headers: {
+  //           Authorization: `Bearer ${storedToken}`,
+  //           'fcm-token': fcmToken,
+  //         },
+  //       });
+  //     }
+  //   }
+
+  //   setupFCM();
+
+  //   const unsubscribe = messaging().onMessage(async (remoteMessage) => {
+  //     console.log('📩 Foreground notification:', remoteMessage);
+  //   });
+
+  //   messaging().onNotificationOpenedApp((remoteMessage) => {
+  //     console.log('📲 Opened from background:', remoteMessage);
+  //   });
+
+  //   messaging()
+  //     .getInitialNotification()
+  //     .then((remoteMessage) => {
+  //       if (remoteMessage) {
+  //         console.log('🚀 Opened from quit:', remoteMessage);
+  //       }
+  //     });
+
+  //   return unsubscribe;
+  // }, [user, storedToken]);
+
+  useEffect(() => {
+    // Only run when both user and token are available
+    if (!user?.username) return;
+
+    const setupFCM = async () => {
+      const token = storedToken || (await AsyncStorage.getItem("token"));
+      if (!token) return;
+
+      const authStatus = await messaging().requestPermission();
+      const enabled =
+        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+      if (!enabled) {
+        console.log('Permission not granted');
+        return;
+      }
+
+      const fcmToken = await messaging().getToken();
+      console.log('🔥 FCM TOKEN:', fcmToken);
+      console.log('TOKEN:', token);
+      console.log('username:', user.username);
+
+      // Send FCM token to backend
+      fetch(`${NEXT_PUBLIC_API_BASE_URL_NEW}notifications/${user.username}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'fcm-token': fcmToken,
+        },
+      });
+    };
+
+    setupFCM();
+
+    // Foreground notification listener
+    const unsubscribeForeground = messaging().onMessage(async (remoteMessage) => {
+      console.log('📩 Foreground notification:', remoteMessage);
+    });
+
+    // Background notification opened listener
+    const unsubscribeBackground = messaging().onNotificationOpenedApp((remoteMessage) => {
+      console.log('📲 Opened from background:', remoteMessage);
+    });
+
+    // Initial notification if app was killed
+    messaging().getInitialNotification().then((remoteMessage) => {
+      if (remoteMessage) {
+        console.log('🚀 Opened from quit:', remoteMessage);
+      }
+    });
+
+    // Cleanup listeners
+    return () => {
+      unsubscribeForeground();
+      unsubscribeBackground();
+    };
+  }, [user, storedToken]);
 
   useFocusEffect(
     useCallback(() => {
       if (user !== undefined) {
-        fetchServices();
+        //fetchServices();
       }
     }, [user])
   );
@@ -63,66 +184,66 @@ function HomeScreen() {
     { id: '4', name: 'Ajman', image: require('../../assets/images/ajman.png') },
   ];
 
-  const fetchServices = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('https://uberevisa.com/api/categories');
-      const data = await response.json();
-      const items = Array.isArray(data?.data) ? data.data : [];
+  // const fetchServices = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const response = await fetch('https://uberevisa.com/api/categories');
+  //     const data = await response.json();
+  //     const items = Array.isArray(data?.data) ? data.data : [];
 
-      const isPartner = user?.isPartner === true;
-      const isApproved = user?.partnerApproved === true;
+  //     const isPartner = user?.isPartner === true;
+  //     const isApproved = user?.partnerApproved === true;
 
-      const finalItems =
-        isPartner && isApproved
-          ? items
-          : items.filter((item: any) => {
-            const name = item?.name?.toLowerCase?.();
-            return name === 'visit visa' || name === 'pick & drop';
-          });
+  //     const finalItems =
+  //       isPartner && isApproved
+  //         ? items
+  //         : items.filter((item: any) => {
+  //           const name = item?.name?.toLowerCase?.();
+  //           return name === 'visit visa' || name === 'pick & drop';
+  //         });
 
-      // ❌ hide cruise only
-      const filteredItems = finalItems.filter(
-        (item: any) => item?.name?.toLowerCase?.() !== 'cruise'
-      );
+  //     // ❌ hide cruise only
+  //     const filteredItems = finalItems.filter(
+  //       (item: any) => item?.name?.toLowerCase?.() !== 'cruise'
+  //     );
 
-      const mapped = filteredItems.map((item: any) => {
-        const name = item.name || 'Unnamed';
-        let icon = '';
+  //     const mapped = filteredItems.map((item: any) => {
+  //       const name = item.name || 'Unnamed';
+  //       let icon = '';
 
-        if (item.image && typeof item.image === 'string' && item.image.startsWith('http')) {
-          icon = item.image;
-        }
+  //       if (item.image && typeof item.image === 'string' && item.image.startsWith('http')) {
+  //         icon = item.image;
+  //       }
 
-        if (name.toLowerCase() === 'visit visa') {
-          icon =
-            'https://uberevisa.com/seed/image/faa3d3a7-47c5-4581-beda-799b64bb0f3b_675b6efc-1f05-4f43-95c2-1b26c24dfe3e_HAMID TOURIST VISA-01-08.png';
-        } else if (name.toLowerCase() === 'pick & drop') {
-          icon =
-            'https://uberevisa.com/seed/image/9b032d83-75f1-4b05-9d78-9ae3cbe63846_fda2b440-8f69-4005-b85a-09750baf3146_pick n drop-011.png';
-        } else if (name.toLowerCase() === 'cruise') {
-          icon =
-            'https://uberevisa.com/seed/image/db6523fb-c5cb-4732-9644-2ed9bdd1ef4a_ppnpn-01.png';
-        } else if (name.toLowerCase() === 'resorts') {
-          icon =
-            'https://uberevisa.com/seed/image/fbd5d51a-dcad-454b-a62a-a609c5977d62_car%20resort-03.png';
-        }
+  //       if (name.toLowerCase() === 'visit visa') {
+  //         icon =
+  //           'https://uberevisa.com/seed/image/faa3d3a7-47c5-4581-beda-799b64bb0f3b_675b6efc-1f05-4f43-95c2-1b26c24dfe3e_HAMID TOURIST VISA-01-08.png';
+  //       } else if (name.toLowerCase() === 'pick & drop') {
+  //         icon =
+  //           'https://uberevisa.com/seed/image/9b032d83-75f1-4b05-9d78-9ae3cbe63846_fda2b440-8f69-4005-b85a-09750baf3146_pick n drop-011.png';
+  //       } else if (name.toLowerCase() === 'cruise') {
+  //         icon =
+  //           'https://uberevisa.com/seed/image/db6523fb-c5cb-4732-9644-2ed9bdd1ef4a_ppnpn-01.png';
+  //       } else if (name.toLowerCase() === 'resorts') {
+  //         icon =
+  //           'https://uberevisa.com/seed/image/fbd5d51a-dcad-454b-a62a-a609c5977d62_car%20resort-03.png';
+  //       }
 
-        return {
-          id: item?.Id?.toString() ?? Math.random().toString(),
-          name,
-          icon,
-        };
-      });
+  //       return {
+  //         id: item?.Id?.toString() ?? Math.random().toString(),
+  //         name,
+  //         icon,
+  //       };
+  //     });
 
-      setServices(mapped);
-    } catch (e) {
-      setError('Failed to load services');
-      console.error('Error fetching categories:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+  //     setServices(mapped);
+  //   } catch (e) {
+  //     setError('Failed to load services');
+  //     console.error('Error fetching categories:', e);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const handlePress = (name: string) => {
     if (name.toLowerCase() === 'visit visa') {
@@ -132,6 +253,18 @@ function HomeScreen() {
       router.push('/MapScreen');
     } else if (name.toLowerCase() === 'resorts') {
       router.push('/Resorts');
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await AsyncStorage.removeItem("token"); // optional, if you also use token
+      await clearUser(); // updates state and clears AsyncStorage
+
+      Toast.show({ type: 'success', text1: 'Logout successful' });
+      router.replace('/'); // optional: redirect
+    } catch (error) {
+      console.log("Logout error:", error);
     }
   };
 
@@ -151,14 +284,10 @@ function HomeScreen() {
           />
           {user ? (
             <View style={styles.loggedInRow}>
-              <Text style={styles.welcomeText}>Hi, {user.displayName}</Text>
+              <Text style={styles.welcomeText}>Hi, {user.firstName} {user.lastName}</Text>
               <Pressable
                 style={styles.logoutButton}
-                onPress={async () => {
-                  await logout();
-                  Toast.show({ type: 'success', text1: 'Logout successful' });
-                  router.replace('/');
-                }}
+                onPress={() => logout()}
               >
                 <Feather name="log-out" size={24} color="#333" />
               </Pressable>
@@ -174,7 +303,7 @@ function HomeScreen() {
           <View style={styles.contentContainer}>
             <Text style={styles.chooseService}>Looking For Travel{'\n'}Services?</Text>
 
-            {loading ? (
+            {/* {loading ? (
               <ActivityIndicator size="large" />
             ) : error ? (
               <Text>{error}</Text>
@@ -195,7 +324,7 @@ function HomeScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-            )}
+            )} */}
 
             <Text style={styles.chooseOtherService}>UAE Top Destinations</Text>
             <ScrollView

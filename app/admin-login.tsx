@@ -1,9 +1,6 @@
-import { loginSchema, LoginSchema } from "@/lib/schemas/loginSchema";
-import { useStore } from "@/stores/store";
 import { Ionicons } from "@expo/vector-icons";
-import { zodResolver } from "@hookform/resolvers/zod";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
-import { observer } from "mobx-react-lite";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import {
@@ -16,47 +13,60 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { z } from "zod";
+import { NEXT_PUBLIC_API_BASE_URL_NEW } from "./environment";
 
-/* Fallback Schema */
-const fallbackSchema = z.object({
-  email: z.string().email("Invalid email").nonempty("Email is required"),
-  password: z.string().nonempty("Password is required"),
-});
+type LoginForm = {
+  username: string;
+  password: string;
+};
 
 const AdminLogin = () => {
-  const { userStore } = useStore();
   const [secure, setSecure] = useState(true);
 
   const {
     setValue,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<LoginSchema>({
-    resolver: zodResolver(loginSchema || fallbackSchema),
+  } = useForm<LoginForm>({
     mode: "onTouched",
   });
 
-  const onSubmit = async (data: LoginSchema) => {
-    const result = await userStore.login(data);
+  const onSubmit = async (data: LoginForm) => {
+    try {
+      const res = await fetch(
+        `${NEXT_PUBLIC_API_BASE_URL_NEW}login/authenticate`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: data.username,
+            password: data.password,
+          }),
+        }
+      );
 
-    if (result.status === "success") {
-      Toast.show({ type: "success", text1: "Login Successful 🎉" });
+      const json = await res.json();
 
-      const isPartner = userStore.user?.isPartner === true;
-      const isApproved = userStore.user?.partnerApproved === true;
-
-      if (isPartner && !isApproved) {
-        Toast.show({
-          type: "info",
-          text1: "Your partner account is under review",
-        });
+      if (!res.ok) {
+        Toast.show({ type: "error", text1: "Invalid credentials" });
         return;
       }
 
+      // Save token
+      await AsyncStorage.setItem("token", json.token);
+      console.log('🔥 TOKEN:', json.token);
+
+      // Save user info
+      await AsyncStorage.setItem("user", JSON.stringify(json));
+
+      Toast.show({ type: "success", text1: "Login Successful 🎉" });
+
       router.replace("/");
-    } else {
-      Toast.show({ type: "error", text1: "Invalid credentials" });
+    } catch (err) {
+      console.log(err);
+      Toast.show({ type: "error", text1: "Something went wrong" });
     }
   };
 
@@ -69,21 +79,21 @@ const AdminLogin = () => {
       >
         <View style={styles.card}>
           <Text style={styles.title}>Welcome Back 👋</Text>
-          <Text style={styles.subtitle}>Admin Login</Text>
 
-          {/* Email */}
+          {/* Username */}
           <View style={styles.inputWrapper}>
-            <Ionicons name="mail-outline" size={20} color="#999" />
+            <Ionicons name="person-outline" size={20} color="#999" />
             <TextInput
               style={styles.input}
-              placeholder="Email"
+              placeholder="Username"
               placeholderTextColor="#aaa"
-              keyboardType="email-address"
               autoCapitalize="none"
-              onChangeText={(v) => setValue("email", v)}
+              onChangeText={(v) => setValue("username", v)}
             />
           </View>
-          {errors.email && <Text style={styles.error}>{errors.email.message}</Text>}
+          {errors.username && (
+            <Text style={styles.error}>{errors.username.message}</Text>
+          )}
 
           {/* Password */}
           <View style={styles.inputWrapper}>
@@ -137,7 +147,7 @@ const AdminLogin = () => {
   );
 };
 
-export default observer(AdminLogin);
+export default AdminLogin;
 
 /* ================== STYLES ================== */
 
@@ -165,12 +175,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#1f2937",
     textAlign: "center",
-  },
-  subtitle: {
-    fontSize: 15,
-    color: "#6b7280",
-    textAlign: "center",
-    marginVertical: 10,
   },
   inputWrapper: {
     flexDirection: "row",

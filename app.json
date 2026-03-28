@@ -67,7 +67,6 @@
 //     }
 //   }
 // }
-
 {
   "expo": {
     "name": "UTA",
@@ -126,7 +125,13 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "@react-native-firebase/app",
+        {
+          "isApplication": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

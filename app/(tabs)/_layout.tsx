@@ -3,11 +3,13 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { UserProvider } from '../usercontext/UserContext';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets(); // <- 👈 get device safe area insets
 
   return (
+    <UserProvider>
     <Tabs
       screenOptions={{
         headerShown: false,
@@ -98,5 +100,6 @@ export default function TabLayout() {
         }}
       />
     </Tabs>
+    </UserProvider>
   );
 }
