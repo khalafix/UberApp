@@ -264,7 +264,6 @@ function HomeScreen() {
         style={styles.background}
         resizeMode="cover"
       >
-        {/* HEADER */}
         <View style={styles.header}>
           <Image
             source={require('../../assets/images/utravelagency-light.png')}
