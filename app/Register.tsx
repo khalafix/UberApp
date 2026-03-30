@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
     StyleSheet,
@@ -11,200 +11,208 @@ import {
     View,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
+import PhoneInput from "react-native-phone-number-input";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { NEXT_PUBLIC_API_BASE_URL_NEW } from "./environment";
 
 type RegisterForm = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phonenumber: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phonenumber: string;
 };
 
 const Register = () => {
-  const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const phoneInputRef = useRef<PhoneInput>(null);
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<RegisterForm>();
+    const {
+        control,
+        handleSubmit,
+        setValue,
+        watch,
+        formState: { errors },
+    } = useForm<RegisterForm>();
 
-  // 🔐 Generate password
-  const generateRandomPassword = () => {
-    return "Aa@" + Math.random().toString(36).slice(-8);
-  };
+    const phoneValue = watch("phonenumber");
 
-  const onSubmit = async (data: RegisterForm) => {
-    setLoading(true);
-
-    try {
-      const randomPassword = generateRandomPassword();
-
-      const payload = {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        phoneNumber: data.phonenumber,
-        username: data.phonenumber,
-        password: randomPassword,
-        confirmPassword: randomPassword,
-      };
-
-      const res = await fetch(
-        `${NEXT_PUBLIC_API_BASE_URL_NEW}register/create`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
+    const generateRandomPassword = (length = 10) => {
+        const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+        let password = "";
+        for (let i = 0; i < length; i++) {
+            password += letters.charAt(Math.floor(Math.random() * letters.length));
         }
-      );
+        return password;
+    };
 
-      const json = await res.json();
+    const onSubmit = async (data: RegisterForm) => {
+        setLoading(true);
 
-      if (!res.ok) {
-        Toast.show({
-          type: "error",
-          text1: json?.message || "Registration failed",
-        });
-        return;
-      }
+        try {
+            const randomPassword = generateRandomPassword(10);
 
-      if (json?.token) {
-        await AsyncStorage.setItem("token", json.token);
-      }
+            const payload = {
+                firstName: data.firstName,
+                lastName: data.lastName,
+                email: data.email,
+                phoneNumber: data.phonenumber,
+                username: data.phonenumber,
+                password: randomPassword,
+                confirmPassword: randomPassword,
+            };
 
-      Toast.show({
-        type: "success",
-        text1: "Account created 🎉",
-        text2: `Password: ${randomPassword}`,
-      });
+            const res = await axios.post(
+                `${NEXT_PUBLIC_API_BASE_URL_NEW}register/create`,
+                payload,
+            );
 
-      router.replace("/admin-login");
-    } catch (err) {
-      console.log(err);
-      Toast.show({ type: "error", text1: "Something went wrong" });
-    } finally {
-      setLoading(false);
-    }
-  };
+            // Removed token storage
+            // if (res.data?.token) {
+            //     await AsyncStorage.setItem("token", res.data.token);
+            // }
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <KeyboardAwareScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.title}>Create Account ✨</Text>
+            Toast.show({
+                type: "success",
+                text1: "Account created 🎉",
+                text2: `Password: ${randomPassword}`,
+            });
 
-          {/* First Name */}
-          <Controller
-            control={control}
-            name="firstName"
-            rules={{ required: true }}
-            render={({ field: { onChange, value } }) => (
-              <View style={styles.inputWrapper}>
-                <Ionicons name="person-outline" size={20} color="#999" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="First Name"
-                  value={value}
-                  onChangeText={onChange}
-                />
-              </View>
-            )}
-          />
-          {errors.firstName && (
-            <Text style={styles.error}>This field is required</Text>
-          )}
+            router.replace("/ConfirmEmail");
+        } catch (err: any) {
+            console.log(err.response?.data || err.message);
 
-          {/* Last Name */}
-          <Controller
-            control={control}
-            name="lastName"
-            rules={{ required: true }}
-            render={({ field: { onChange, value } }) => (
-              <View style={styles.inputWrapper}>
-                <Ionicons name="person-outline" size={20} color="#999" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Last Name"
-                  value={value}
-                  onChangeText={onChange}
-                />
-              </View>
-            )}
-          />
-          {errors.lastName && (
-            <Text style={styles.error}>This field is required</Text>
-          )}
+            Toast.show({
+                type: "error",
+                text1: err.response?.data?.message || "Registration failed",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-          {/* Email */}
-          <Controller
-            control={control}
-            name="email"
-            rules={{ required: true }}
-            render={({ field: { onChange, value } }) => (
-              <View style={styles.inputWrapper}>
-                <Ionicons name="mail-outline" size={20} color="#999" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email"
-                  value={value}
-                  onChangeText={onChange}
-                />
-              </View>
-            )}
-          />
-          {errors.email && (
-            <Text style={styles.error}>This field is required</Text>
-          )}
+    return (
+        <SafeAreaView style={styles.safe}>
+            <KeyboardAwareScrollView contentContainerStyle={styles.container}>
+                <View style={styles.card}>
+                    <Text style={styles.title}>Create Account ✨</Text>
 
-          {/* Phone */}
-          <Controller
-            control={control}
-            name="phonenumber"
-            rules={{ required: true }}
-            render={({ field: { onChange, value } }) => (
-              <View style={styles.inputWrapper}>
-                <Ionicons name="call-outline" size={20} color="#999" />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Phone Number"
-                  keyboardType="phone-pad"
-                  value={value}
-                  onChangeText={onChange}
-                />
-              </View>
-            )}
-          />
-          {errors.phonenumber && (
-            <Text style={styles.error}>This field is required</Text>
-          )}
+                    {/* First Name */}
+                    <Controller
+                        control={control}
+                        name="firstName"
+                        rules={{ required: true }}
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="person-outline" size={20} color="#999" />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="First Name"
+                                    value={value}
+                                    onChangeText={onChange}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.firstName && (
+                        <Text style={styles.error}>This field is required</Text>
+                    )}
 
-          {/* Button */}
-          <TouchableOpacity
-            style={[styles.loginBtn, loading && styles.disabledBtn]}
-            onPress={handleSubmit(onSubmit)}
-            disabled={loading}
-          >
-            <Text style={styles.loginText}>
-              {loading ? "Creating..." : "Register"}
-            </Text>
-          </TouchableOpacity>
+                    {/* Last Name */}
+                    <Controller
+                        control={control}
+                        name="lastName"
+                        rules={{ required: true }}
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="person-outline" size={20} color="#999" />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Last Name"
+                                    value={value}
+                                    onChangeText={onChange}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.lastName && (
+                        <Text style={styles.error}>This field is required</Text>
+                    )}
 
-          {/* Login */}
-          <View style={styles.registerRow}>
-            <Text style={styles.registerText}>Already have an account?</Text>
-            <TouchableOpacity onPress={() => router.push("/admin-login")}>
-              <Text style={styles.registerLink}> Login</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </KeyboardAwareScrollView>
-    </SafeAreaView>
-  );
+                    {/* Email */}
+                    <Controller
+                        control={control}
+                        name="email"
+                        rules={{ required: true }}
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="mail-outline" size={20} color="#999" />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Email"
+                                    value={value}
+                                    onChangeText={onChange}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.email && (
+                        <Text style={styles.error}>This field is required</Text>
+                    )}
+
+                    {/* Phone */}
+                    <Controller
+                        control={control}
+                        name="phonenumber"
+                        rules={{ required: true }}
+                        render={({ field: { onChange, value } }) => (
+                            <View style={styles.inputWrapper}>
+                                <PhoneInput
+                                    ref={phoneInputRef}
+                                    defaultValue={value}
+                                    defaultCode="AE"
+                                    layout="first"
+                                    onChangeFormattedText={(text) => {
+                                        onChange(text);
+                                    }}
+                                    containerStyle={[
+                                        styles.phoneContainer,
+                                        errors.phonenumber ? styles.inputError : null,
+                                        { paddingLeft: 0, marginLeft: 0 },
+                                    ]}
+                                    textContainerStyle={styles.phoneTextContainer}
+                                    textInputStyle={styles.phoneTextInput}
+                                    flagButtonStyle={{ paddingTop: 15, paddingLeft: 30, marginLeft: -30 }}
+                                />
+                            </View>
+                        )}
+                    />
+                    {errors.phonenumber && (
+                        <Text style={styles.error}>This field is required</Text>
+                    )}
+
+                    {/* Button */}
+                    <TouchableOpacity
+                        style={[styles.loginBtn, loading && styles.disabledBtn]}
+                        onPress={handleSubmit(onSubmit)}
+                        disabled={loading}
+                    >
+                        <Text style={styles.loginText}>
+                            {loading ? "Creating..." : "Register"}
+                        </Text>
+                    </TouchableOpacity>
+
+                    {/* Login */}
+                    <View style={styles.registerRow}>
+                        <Text style={styles.registerText}>Already have an account?</Text>
+                        <TouchableOpacity onPress={() => router.push("/admin-login")}>
+                            <Text style={styles.registerLink}> Login</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </KeyboardAwareScrollView>
+        </SafeAreaView>
+    );
 };
 
 export default Register;
@@ -212,84 +220,102 @@ export default Register;
 /* ================== STYLES ================== */
 
 const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: "#f7f9fc",
-  },
-  container: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 20,
-  },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 22,
-    padding: 26,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 6,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#1f2937",
-    textAlign: "center",
-  },
-  inputWrapper: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f1f5f9",
-    borderRadius: 14,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginTop: 12,
-  },
-  input: {
-    flex: 1,
-    marginLeft: 10,
-    fontSize: 15,
-    color: "#111827",
-  },
-  loginBtn: {
-    backgroundColor: "#cc3093",
-    paddingVertical: 15,
-    borderRadius: 14,
-    marginTop: 24,
-  },
-  disabledBtn: {
-    opacity: 0.6,
-  },
-  loginText: {
-    color: "#fff",
-    textAlign: "center",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  registerRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    marginTop: 18,
-  },
-  registerText: {
-    color: "#6b7280",
-    fontSize: 14,
-  },
-  registerLink: {
-    color: "#cc3093",
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  backText: {
-    textAlign: "center",
-    marginTop: 16,
-    color: "#6b7280",
-    fontSize: 14,
-  },
-  error: {
-    color: "#ef4444",
-    fontSize: 13,
-    marginLeft: 8,
-    marginTop: 6,
-  },
+    safe: {
+        flex: 1,
+        backgroundColor: "#f7f9fc",
+    },
+    container: {
+        flexGrow: 1,
+        justifyContent: "center",
+        padding: 20,
+    },
+    card: {
+        backgroundColor: "#fff",
+        borderRadius: 22,
+        padding: 26,
+        shadowColor: "#000",
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 6,
+    },
+    title: {
+        fontSize: 28,
+        fontWeight: "700",
+        color: "#1f2937",
+        textAlign: "center",
+    },
+    inputWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "#f1f5f9",
+        borderRadius: 14,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        marginTop: 12,
+    },
+    input: {
+        flex: 1,
+        marginLeft: 10,
+        fontSize: 15,
+        color: "#111827",
+    },
+    phoneContainer: {
+        width: "100%",
+        borderRadius: 14,
+        backgroundColor: "#f1f5f9",
+    },
+    phoneTextContainer: {
+        backgroundColor: "#f1f5f9",
+        borderRadius: 14,
+        paddingVertical: 0,
+    },
+    phoneTextInput: {
+        fontSize: 15,
+        color: "#111827",
+    },
+    inputError: {
+        borderColor: "#ef4444",
+        borderWidth: 1,
+    },
+    loginBtn: {
+        backgroundColor: "#cc3093",
+        paddingVertical: 15,
+        borderRadius: 14,
+        marginTop: 24,
+    },
+    disabledBtn: {
+        opacity: 0.6,
+    },
+    loginText: {
+        color: "#fff",
+        textAlign: "center",
+        fontSize: 16,
+        fontWeight: "600",
+    },
+    registerRow: {
+        flexDirection: "row",
+        justifyContent: "center",
+        marginTop: 18,
+    },
+    registerText: {
+        color: "#6b7280",
+        fontSize: 14,
+    },
+    registerLink: {
+        color: "#cc3093",
+        fontWeight: "600",
+        fontSize: 14,
+    },
+    backText: {
+        textAlign: "center",
+        marginTop: 16,
+        color: "#6b7280",
+        fontSize: 14,
+    },
+    error: {
+        color: "#ef4444",
+        fontSize: 13,
+        marginLeft: 8,
+        marginTop: 6,
+    },
 });
