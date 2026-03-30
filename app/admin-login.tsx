@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as LocalAuthentication from "expo-local-authentication";
 import { router } from "expo-router";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
   StyleSheet,
@@ -25,12 +25,20 @@ const AdminLogin = () => {
   const [secure, setSecure] = useState(true);
 
   const {
+    register,
     setValue,
     handleSubmit,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>({
     mode: "onTouched",
   });
+
+  // ✅ REGISTER FIELDS (IMPORTANT)
+  useEffect(() => {
+    register("username", { required: true });
+    register("password", { required: true });
+  }, [register]);
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -55,11 +63,9 @@ const AdminLogin = () => {
         return;
       }
 
-      // Save token
       await AsyncStorage.setItem("token", json.token);
-      console.log('🔥 TOKEN:', json.token);
+      console.log("🔥 TOKEN:", json.token);
 
-      // Save user info
       await AsyncStorage.setItem("user", JSON.stringify(json));
       await AsyncStorage.setItem("finger_user", JSON.stringify(json));
 
@@ -102,7 +108,10 @@ const AdminLogin = () => {
         Toast.show({ type: "success", text1: "Login Successful 🎉" });
         router.replace("/");
       } else {
-        Toast.show({ type: "error", text1: "Fingerprint Authentication Failed" });
+        Toast.show({
+          type: "error",
+          text1: "Fingerprint Authentication Failed",
+        });
       }
     } catch (err) {
       console.log(err);
@@ -128,11 +137,13 @@ const AdminLogin = () => {
               placeholder="Username"
               placeholderTextColor="#aaa"
               autoCapitalize="none"
-              onChangeText={(v) => setValue("username", v)}
+              onChangeText={(v) =>
+                setValue("username", v, { shouldValidate: true })
+              }
             />
           </View>
           {errors.username && (
-            <Text style={styles.error}>{errors.username.message}</Text>
+            <Text style={styles.error}>This field is required</Text>
           )}
 
           {/* Password */}
@@ -144,7 +155,9 @@ const AdminLogin = () => {
               placeholderTextColor="#aaa"
               secureTextEntry={secure}
               autoCapitalize="none"
-              onChangeText={(v) => setValue("password", v)}
+              onChangeText={(v) =>
+                setValue("password", v, { shouldValidate: true })
+              }
             />
             <TouchableOpacity onPress={() => setSecure(!secure)}>
               <Ionicons
@@ -155,13 +168,15 @@ const AdminLogin = () => {
             </TouchableOpacity>
           </View>
           {errors.password && (
-            <Text style={styles.error}>{errors.password.message}</Text>
+            <Text style={styles.error}>This field is required</Text>
           )}
 
           {/* Login Button */}
           <TouchableOpacity
             style={[styles.loginBtn, isSubmitting && styles.disabledBtn]}
-            onPress={handleSubmit(onSubmit)}
+            onPress={handleSubmit(onSubmit, async () => {
+              await trigger(); // 🔥 force validation
+            })}
             disabled={isSubmitting}
           >
             <Text style={styles.loginText}>
@@ -171,17 +186,33 @@ const AdminLogin = () => {
 
           {/* Fingerprint Login */}
           <TouchableOpacity
-            style={[styles.loginBtn, { backgroundColor: "#4CAF50", marginTop: 12, flexDirection: "row", justifyContent: "center", alignItems: "center" }]}
+            style={[
+              styles.loginBtn,
+              {
+                backgroundColor: "#4CAF50",
+                marginTop: 12,
+                flexDirection: "row",
+                justifyContent: "center",
+                alignItems: "center",
+              },
+            ]}
             onPress={handleFingerprintLogin}
           >
-            <Ionicons name="finger-print-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Ionicons
+              name="finger-print-outline"
+              size={20}
+              color="#fff"
+              style={{ marginRight: 8 }}
+            />
             <Text style={styles.loginText}>Login with Fingerprint</Text>
           </TouchableOpacity>
 
           {/* Register */}
           <View style={styles.registerRow}>
-            <Text style={styles.registerText}>Don’t have an account?</Text>
-            <TouchableOpacity onPress={() => router.push("/Login")}>
+            <Text style={styles.registerText}>
+              Don’t have an account?
+            </Text>
+            <TouchableOpacity onPress={() => router.push("/Register")}>
               <Text style={styles.registerLink}> Register</Text>
             </TouchableOpacity>
           </View>
