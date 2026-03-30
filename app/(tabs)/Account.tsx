@@ -54,7 +54,6 @@ function Account() {
       await clearUser();
 
       Toast.show({ type: 'success', text1: 'Logout successful' });
-      router.replace('/');
     } catch (error) {
       console.log("Logout error:", error);
     }

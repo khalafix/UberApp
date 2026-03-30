@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as LocalAuthentication from "expo-local-authentication";
 import { router } from "expo-router";
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -60,10 +61,49 @@ const AdminLogin = () => {
 
       // Save user info
       await AsyncStorage.setItem("user", JSON.stringify(json));
+      await AsyncStorage.setItem("finger_user", JSON.stringify(json));
 
       Toast.show({ type: "success", text1: "Login Successful 🎉" });
 
       router.replace("/");
+    } catch (err) {
+      console.log(err);
+      Toast.show({ type: "error", text1: "Something went wrong" });
+    }
+  };
+
+  // ================= Fingerprint Login =================
+  const handleFingerprintLogin = async () => {
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) {
+        Toast.show({ type: "error", text1: "No biometric hardware found" });
+        return;
+      }
+
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!isEnrolled) {
+        Toast.show({ type: "error", text1: "No biometrics enrolled" });
+        return;
+      }
+
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Login with Fingerprint",
+        fallbackLabel: "Enter Password",
+      });
+
+      if (result.success) {
+        const userData = await AsyncStorage.getItem("finger_user");
+        if (!userData) {
+          Toast.show({ type: "error", text1: "Please login manually first" });
+          return;
+        }
+
+        Toast.show({ type: "success", text1: "Login Successful 🎉" });
+        router.replace("/");
+      } else {
+        Toast.show({ type: "error", text1: "Fingerprint Authentication Failed" });
+      }
     } catch (err) {
       console.log(err);
       Toast.show({ type: "error", text1: "Something went wrong" });
@@ -127,6 +167,15 @@ const AdminLogin = () => {
             <Text style={styles.loginText}>
               {isSubmitting ? "Logging in..." : "Login"}
             </Text>
+          </TouchableOpacity>
+
+          {/* Fingerprint Login */}
+          <TouchableOpacity
+            style={[styles.loginBtn, { backgroundColor: "#4CAF50", marginTop: 12, flexDirection: "row", justifyContent: "center", alignItems: "center" }]}
+            onPress={handleFingerprintLogin}
+          >
+            <Ionicons name="finger-print-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={styles.loginText}>Login with Fingerprint</Text>
           </TouchableOpacity>
 
           {/* Register */}

@@ -15,9 +15,10 @@ export interface User {
 
 // Define the context type
 interface UserContextType {
-  user: User | null;
+  user: User | null; // current logged in user
   updateUser: (updatedUser: User) => Promise<void>;
   clearUser: () => Promise<void>;
+  getFingerUser: () => Promise<User | null>; // fingerprint login user
 }
 
 // Props for the provider
@@ -35,9 +36,17 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   useEffect(() => {
     const loadUser = async () => {
       try {
+        // 1️⃣ Try normal login user first
         const storedUser = await AsyncStorage.getItem("user");
         if (storedUser) {
           setUser(JSON.parse(storedUser));
+          return;
+        }
+
+        // 2️⃣ If no normal user, try fingerprint user
+        const storedFingerUser = await AsyncStorage.getItem("finger_user");
+        if (storedFingerUser) {
+          setUser(JSON.parse(storedFingerUser));
         }
       } catch (error) {
         console.error("Failed to load user:", error);
@@ -45,12 +54,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     };
     loadUser();
   }, []);
-
   // Update user and persist it
   const updateUser = async (updatedUser: User) => {
     try {
       setUser(updatedUser);
       await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
+      // Also save for fingerprint login
+      await AsyncStorage.setItem("finger_user", JSON.stringify(updatedUser));
     } catch (error) {
       console.error("Failed to save user:", error);
     }
@@ -61,13 +71,28 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
     try {
       setUser(null);
       await AsyncStorage.removeItem("user");
+      // Do NOT remove "finger_user" so fingerprint login can still work
     } catch (error) {
       console.error("Failed to clear user:", error);
     }
   };
 
+  // Get fingerprint login user
+  const getFingerUser = async (): Promise<User | null> => {
+    try {
+      const storedFingerUser = await AsyncStorage.getItem("finger_user");
+      if (storedFingerUser) {
+        return JSON.parse(storedFingerUser);
+      }
+      return null;
+    } catch (error) {
+      console.error("Failed to get fingerprint user:", error);
+      return null;
+    }
+  };
+
   return (
-    <UserContext.Provider value={{ user, updateUser, clearUser }}>
+    <UserContext.Provider value={{ user, updateUser, clearUser, getFingerUser }}>
       {children}
     </UserContext.Provider>
   );

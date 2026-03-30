@@ -1,13 +1,16 @@
 // app/index.tsx
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import messaging from '@react-native-firebase/messaging';
+import * as Notifications from 'expo-notifications';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { observer } from 'mobx-react-lite';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
   ImageBackground,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +20,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { NEXT_PUBLIC_API_BASE_URL_NEW } from '../environment';
 import '../firebase';
 import { useUser } from '../usercontext/UserContext';
 
@@ -26,6 +30,39 @@ interface ServiceItem {
   icon: string;
 }
 
+// ✅ iOS & Android: Show notifications in foreground
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,   // new required field
+    shouldShowList: true,     // new required field
+  }),
+});
+
+// Android: create notification channel
+const createAndroidChannel = async () => {
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync('default', {
+      name: 'Default',
+      importance: Notifications.AndroidImportance.MAX,
+      vibrationPattern: [0, 250, 250, 250],
+      lightColor: '#FF231F7C',
+    });
+  }
+};
+
+// Request notification permissions (Android & iOS)
+const requestNotificationPermission = async () => {
+  const { status } = await Notifications.requestPermissionsAsync();
+  if (status !== 'granted') {
+    console.log('🚫 Notification permission not granted!');
+    return false;
+  }
+  return true;
+};
+
 function HomeScreen() {
   const router = useRouter();
   const [services, setServices] = useState<ServiceItem[]>([]);
@@ -33,6 +70,81 @@ function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [soonVisible, setSoonVisible] = useState(false);
   const { user, clearUser } = useUser();
+
+  const [storedToken, setStoredToken] = useState<string | null>(null);
+
+  // Load local token
+  useEffect(() => {
+    const loadToken = async () => {
+      const token = await AsyncStorage.getItem('token');
+      setStoredToken(token);
+    };
+    loadToken();
+  }, []);
+
+  useEffect(() => {
+    if (!user?.username) return;
+
+    const setupFCM = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) return;
+
+      // Android channel
+      await createAndroidChannel();
+
+      // Request permissions
+      const permissionGranted = await requestNotificationPermission();
+      if (!permissionGranted) return;
+
+      // Get FCM token
+      const fcmToken = await messaging().getToken();
+      console.log('🔥 FCM TOKEN:', fcmToken);
+      console.log('TOKEN:', token);
+
+      // Send token to backend
+      await fetch(`${NEXT_PUBLIC_API_BASE_URL_NEW}notifications/${user.username}`, {
+        method: 'POST',
+        headers: {
+          'fcm-token': fcmToken,
+        },
+      });
+    };
+
+    setupFCM();
+
+    // Foreground messages
+    const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
+      console.log('📩 Foreground message:', remoteMessage);
+
+      if (remoteMessage.notification) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: remoteMessage.notification.title || 'No title',
+            body: remoteMessage.notification.body || 'No body',
+            sound: 'default',
+          },
+          trigger: null, // show immediately
+        });
+      }
+    });
+
+    // Background messages
+    const unsubscribeBackground = messaging().onNotificationOpenedApp(remoteMessage => {
+      console.log('📲 Opened from background:', remoteMessage);
+    });
+
+    // App killed (cold start)
+    messaging().getInitialNotification().then(remoteMessage => {
+      if (remoteMessage) {
+        console.log('🚀 Opened from quit:', remoteMessage);
+      }
+    });
+
+    return () => {
+      unsubscribeForeground();
+      unsubscribeBackground();
+    };
+  }, [user]);
 
   useFocusEffect(
     useCallback(() => {
@@ -136,11 +248,10 @@ function HomeScreen() {
 
   const logout = async () => {
     try {
-      await AsyncStorage.removeItem("token"); // optional, if you also use token
-      await clearUser(); // updates state and clears AsyncStorage
+      await AsyncStorage.removeItem("token");
+      await clearUser();
 
       Toast.show({ type: 'success', text1: 'Logout successful' });
-      router.replace('/'); // optional: redirect
     } catch (error) {
       console.log("Logout error:", error);
     }
