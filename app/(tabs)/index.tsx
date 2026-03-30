@@ -1,10 +1,9 @@
 // app/index.tsx
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import messaging from '@react-native-firebase/messaging';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { observer } from 'mobx-react-lite';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
   Image,
   ImageBackground,
@@ -18,7 +17,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { NEXT_PUBLIC_API_BASE_URL_NEW } from '../environment';
 import '../firebase';
 import { useUser } from '../usercontext/UserContext';
 
@@ -35,126 +33,6 @@ function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [soonVisible, setSoonVisible] = useState(false);
   const { user, clearUser } = useUser();
-
-  const [storedToken, setStoredToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadToken = async () => {
-      const token = await AsyncStorage.getItem("token");
-      setStoredToken(token);
-    };
-
-    loadToken();
-  }, []);
-
-  // useEffect(() => {
-  //   if (!storedToken) return; // ⛔ wait until token is loaded
-
-  //   async function setupFCM() {
-  //     const authStatus = await messaging().requestPermission();
-
-  //     const enabled =
-  //       authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-  //       authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-  //     if (!enabled) {
-  //       console.log('Permission not granted');
-  //       return;
-  //     }
-
-  //     const fcmToken = await messaging().getToken();
-  //     console.log('🔥 FCM TOKEN:', fcmToken);
-
-  //     if (user?.username && storedToken && fcmToken) {
-  //       fetch(`${NEXT_PUBLIC_API_BASE_URL_NEW}notifications/${user.username}`, {
-  //         method: 'POST',
-  //         headers: {
-  //           Authorization: `Bearer ${storedToken}`,
-  //           'fcm-token': fcmToken,
-  //         },
-  //       });
-  //     }
-  //   }
-
-  //   setupFCM();
-
-  //   const unsubscribe = messaging().onMessage(async (remoteMessage) => {
-  //     console.log('📩 Foreground notification:', remoteMessage);
-  //   });
-
-  //   messaging().onNotificationOpenedApp((remoteMessage) => {
-  //     console.log('📲 Opened from background:', remoteMessage);
-  //   });
-
-  //   messaging()
-  //     .getInitialNotification()
-  //     .then((remoteMessage) => {
-  //       if (remoteMessage) {
-  //         console.log('🚀 Opened from quit:', remoteMessage);
-  //       }
-  //     });
-
-  //   return unsubscribe;
-  // }, [user, storedToken]);
-
-  useEffect(() => {
-    // Only run when both user and token are available
-    if (!user?.username) return;
-
-    const setupFCM = async () => {
-      const token = storedToken || (await AsyncStorage.getItem("token"));
-      if (!token) return;
-
-      const authStatus = await messaging().requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-      if (!enabled) {
-        console.log('Permission not granted');
-        return;
-      }
-
-      const fcmToken = await messaging().getToken();
-      console.log('🔥 FCM TOKEN:', fcmToken);
-      console.log('TOKEN:', token);
-      console.log('username:', user.username);
-
-      // Send FCM token to backend
-      fetch(`${NEXT_PUBLIC_API_BASE_URL_NEW}notifications/${user.username}`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'fcm-token': fcmToken,
-        },
-      });
-    };
-
-    setupFCM();
-
-    // Foreground notification listener
-    const unsubscribeForeground = messaging().onMessage(async (remoteMessage) => {
-      console.log('📩 Foreground notification:', remoteMessage);
-    });
-
-    // Background notification opened listener
-    const unsubscribeBackground = messaging().onNotificationOpenedApp((remoteMessage) => {
-      console.log('📲 Opened from background:', remoteMessage);
-    });
-
-    // Initial notification if app was killed
-    messaging().getInitialNotification().then((remoteMessage) => {
-      if (remoteMessage) {
-        console.log('🚀 Opened from quit:', remoteMessage);
-      }
-    });
-
-    // Cleanup listeners
-    return () => {
-      unsubscribeForeground();
-      unsubscribeBackground();
-    };
-  }, [user, storedToken]);
 
   useFocusEffect(
     useCallback(() => {
