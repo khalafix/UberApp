@@ -82,7 +82,9 @@
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "This app uses the camera to allow users to upload passport or document photos for visa application assistance and profile verification.",
-        "NSLocationWhenInUseUsageDescription": "This app uses your location to suggest relevant visa information and services based on your current country or region."
+        "NSLocationWhenInUseUsageDescription": "This app uses your location to suggest relevant visa information and services based on your current country or region.",
+        "NSUserTrackingUsageDescription": "This app uses notifications and tracking to send you updates and relevant information.",
+        "UIBackgroundModes": ["remote-notification"]
       }
     },
     "android": {
