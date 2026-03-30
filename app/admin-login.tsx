@@ -15,6 +15,7 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { NEXT_PUBLIC_API_BASE_URL_NEW } from "./environment";
+import { useUser } from "./usercontext/UserContext";
 
 type LoginForm = {
   username: string;
@@ -23,6 +24,7 @@ type LoginForm = {
 
 const AdminLogin = () => {
   const [secure, setSecure] = useState(true);
+  const { updateUser } = useUser();
 
   const {
     register,
@@ -63,15 +65,16 @@ const AdminLogin = () => {
         return;
       }
 
+      // Save token
       await AsyncStorage.setItem("token", json.token);
       console.log("🔥 TOKEN:", json.token);
 
-      await AsyncStorage.setItem("user", JSON.stringify(json));
-      await AsyncStorage.setItem("finger_user", JSON.stringify(json));
+      // ✅ Update context and AsyncStorage
+      await updateUser(json); // <- This will update the UI immediately
 
       Toast.show({ type: "success", text1: "Login Successful 🎉" });
 
-      router.replace("/");
+      router.replace("/"); // navigate after login
     } catch (err) {
       console.log(err);
       Toast.show({ type: "error", text1: "Something went wrong" });
@@ -99,11 +102,16 @@ const AdminLogin = () => {
       });
 
       if (result.success) {
-        const userData = await AsyncStorage.getItem("finger_user");
-        if (!userData) {
+        const fingerUser = await AsyncStorage.getItem("finger_user");
+        if (!fingerUser) {
           Toast.show({ type: "error", text1: "Please login manually first" });
           return;
         }
+
+        const parsedUser = JSON.parse(fingerUser);
+
+        // ✅ Update context so UI re-renders
+        await updateUser(parsedUser);
 
         Toast.show({ type: "success", text1: "Login Successful 🎉" });
         router.replace("/");

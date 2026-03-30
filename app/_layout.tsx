@@ -10,6 +10,7 @@ import 'react-native-reanimated';
 import { enableScreens } from 'react-native-screens';
 import Toast from 'react-native-toast-message';
 import { toastConfig } from './toastConfig';
+import { UserProvider } from './usercontext/UserContext';
 
 enableScreens();
 export default function RootLayout() {
@@ -27,7 +28,7 @@ useEffect(() => {
 
 
   return (
-    
+    <UserProvider>
     <StoreContext.Provider value={store}>
       <StripeProvider
         publishableKey="pk_live_51RCmC8CrP5KnRd87a3r2xKsmQyOWHeFYYLkLupCGGhcZ5GBU0GQcFF6xefhY35lPeZqg871fZySqyDeVHhrlpbNy00o2VG0Dgj"
@@ -43,5 +44,6 @@ useEffect(() => {
         </ThemeProvider>
       </StripeProvider>
     </StoreContext.Provider>
+    </UserProvider>
   );
 }

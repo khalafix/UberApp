@@ -1,4 +1,3 @@
-// app/usercontext/UserContext.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, ReactNode, useContext, useEffect, useState } from "react";
 
@@ -15,75 +14,78 @@ export interface User {
 
 // Define the context type
 interface UserContextType {
-  user: User | null; // current logged in user
+  user: User | null;
   updateUser: (updatedUser: User) => Promise<void>;
   clearUser: () => Promise<void>;
-  getFingerUser: () => Promise<User | null>; // fingerprint login user
+  getFingerUser: () => Promise<User | null>;
 }
 
-// Props for the provider
 interface UserProviderProps {
   children: ReactNode;
 }
 
-// Create context
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
 
-  // Load user from AsyncStorage on mount
+  // Load user only if not logged out
   useEffect(() => {
     const loadUser = async () => {
       try {
-        // 1️⃣ Try normal login user first
+        const loggedOut = await AsyncStorage.getItem("logged_out");
+        if (loggedOut === "true") {
+          // User logged out previously, keep null
+          setUser(null);
+          return;
+        }
+
+        // Try normal login user first
         const storedUser = await AsyncStorage.getItem("user");
         if (storedUser) {
           setUser(JSON.parse(storedUser));
           return;
         }
 
-        // 2️⃣ If no normal user, try fingerprint user
-        const storedFingerUser = await AsyncStorage.getItem("finger_user");
-        if (storedFingerUser) {
-          setUser(JSON.parse(storedFingerUser));
-        }
+        // Optionally, try fingerprint user (if you want)
+        // const storedFingerUser = await AsyncStorage.getItem("finger_user");
+        // if (storedFingerUser) setUser(JSON.parse(storedFingerUser));
+
       } catch (error) {
         console.error("Failed to load user:", error);
       }
     };
     loadUser();
   }, []);
+
   // Update user and persist it
   const updateUser = async (updatedUser: User) => {
     try {
       setUser(updatedUser);
       await AsyncStorage.setItem("user", JSON.stringify(updatedUser));
-      // Also save for fingerprint login
       await AsyncStorage.setItem("finger_user", JSON.stringify(updatedUser));
+      await AsyncStorage.setItem("logged_out", "false"); // reset logout flag
     } catch (error) {
       console.error("Failed to save user:", error);
     }
   };
 
-  // Clear user from state and AsyncStorage (logout)
+  // Clear user (logout)
   const clearUser = async () => {
     try {
       setUser(null);
       await AsyncStorage.removeItem("user");
-      // Do NOT remove "finger_user" so fingerprint login can still work
+      await AsyncStorage.setItem("logged_out", "true"); // mark as logged out
+      // keep "finger_user" if you want fingerprint login later
     } catch (error) {
       console.error("Failed to clear user:", error);
     }
   };
 
-  // Get fingerprint login user
   const getFingerUser = async (): Promise<User | null> => {
     try {
       const storedFingerUser = await AsyncStorage.getItem("finger_user");
-      if (storedFingerUser) {
-        return JSON.parse(storedFingerUser);
-      }
+      if (storedFingerUser) return JSON.parse(storedFingerUser);
       return null;
     } catch (error) {
       console.error("Failed to get fingerprint user:", error);
@@ -98,11 +100,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   );
 };
 
-// Custom hook
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
-  if (!context) {
-    throw new Error("useUser must be used within a UserProvider");
-  }
+  if (!context) throw new Error("useUser must be used within a UserProvider");
   return context;
 };
