@@ -101,10 +101,13 @@
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ],
-      "android:requestLegacyExternalStorage": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
+      },
+      "notification": {
+        "icon": "./assets/images/utravelagency-notification-icon.png",
+        "color": "#cc3093"
       },
       "edgeToEdgeEnabled": true,
       "package": "com.essdeveloper.uta",

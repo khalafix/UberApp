@@ -122,6 +122,13 @@ function HomeScreen() {
             title: remoteMessage.notification.title || 'No title',
             body: remoteMessage.notification.body || 'No body',
             sound: 'default',
+            attachments: [
+              {
+                url: require('../../assets/images/utravelagency-light.png'),
+                identifier: null,
+                type: null
+              },
+            ],
           },
           trigger: null, // show immediately
         });

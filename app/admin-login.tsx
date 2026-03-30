@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import messaging from "@react-native-firebase/messaging";
 import * as LocalAuthentication from "expo-local-authentication";
 import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
@@ -113,6 +114,10 @@ const AdminLogin = () => {
         // ✅ Update context so UI re-renders
         await updateUser(parsedUser);
 
+        // 🔥 Fetch FCM token for fingerprint login
+        const fcmToken = await messaging().getToken();
+        console.log("🔥 FCM TOKEN (fingerprint login):", fcmToken);
+
         Toast.show({ type: "success", text1: "Login Successful 🎉" });
         router.replace("/");
       } else {
@@ -217,9 +222,7 @@ const AdminLogin = () => {
 
           {/* Register */}
           <View style={styles.registerRow}>
-            <Text style={styles.registerText}>
-              Don’t have an account?
-            </Text>
+            <Text style={styles.registerText}>Don’t have an account?</Text>
             <TouchableOpacity onPress={() => router.push("/Register")}>
               <Text style={styles.registerLink}> Register</Text>
             </TouchableOpacity>
