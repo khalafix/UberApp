@@ -20,7 +20,6 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
-import { NEXT_PUBLIC_API_BASE_URL_NEW } from '../environment';
 import '../firebase';
 import { useUser } from '../usercontext/UserContext';
 
@@ -70,7 +69,6 @@ function HomeScreen() {
   const [error, setError] = useState<string | null>(null);
   const [soonVisible, setSoonVisible] = useState(false);
   const { user, clearUser } = useUser();
-
   const [storedToken, setStoredToken] = useState<string | null>(null);
 
   // Load local token
@@ -82,76 +80,65 @@ function HomeScreen() {
     loadToken();
   }, []);
 
+  // Always setup FCM (RUN ONLY ONCE)
   useEffect(() => {
-    if (!user?.username) return;
+    let unsubscribeForeground: any;
+    let unsubscribeBackground: any;
 
-    const setupFCM = async () => {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) return;
-
-      // Android channel
+    const initFCM = async () => {
       await createAndroidChannel();
 
-      // Request permissions
       const permissionGranted = await requestNotificationPermission();
       if (!permissionGranted) return;
 
-      // Get FCM token
-      const fcmToken = await messaging().getToken();
-      console.log('🔥 FCM TOKEN:', fcmToken);
-      console.log('TOKEN:', token);
+      try {
+        const fcmToken = await messaging().getToken();
+        console.log('🔥 FCM TOKEN:', fcmToken);
+      } catch (err) {
+        console.error('⚠️ Error fetching FCM token:', err);
+      }
 
-      // Send token to backend
-      await fetch(`${NEXT_PUBLIC_API_BASE_URL_NEW}notifications/${user.username}`, {
-        method: 'POST',
-        headers: {
-          'fcm-token': fcmToken,
-        },
+      // ✅ register listeners ONLY ONCE
+      unsubscribeForeground = messaging().onMessage(async remoteMessage => {
+        console.log('📩 Foreground message:', remoteMessage);
+
+        if (remoteMessage.notification) {
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: remoteMessage.notification.title || 'No title',
+              body: remoteMessage.notification.body || 'No body',
+              sound: 'default',
+              attachments: [
+                {
+                  url: 'https://ubertravelagency.com/img/general/ubertravelagency-light.svg',
+                  identifier: null,
+                  type: null
+                },
+              ],
+            },
+            trigger: null,
+          });
+        }
+      });
+
+      unsubscribeBackground = messaging().onNotificationOpenedApp(remoteMessage => {
+        console.log('📲 Opened from background:', remoteMessage);
+      });
+
+      messaging().getInitialNotification().then(remoteMessage => {
+        if (remoteMessage) {
+          console.log('🚀 Opened from quit:', remoteMessage);
+        }
       });
     };
 
-    setupFCM();
-
-    // Foreground messages
-    const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
-      console.log('📩 Foreground message:', remoteMessage);
-
-      if (remoteMessage.notification) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
-            title: remoteMessage.notification.title || 'No title',
-            body: remoteMessage.notification.body || 'No body',
-            sound: 'default',
-            attachments: [
-              {
-                url: require('../../assets/images/utravelagency-light.png'),
-                identifier: null,
-                type: null
-              },
-            ],
-          },
-          trigger: null, // show immediately
-        });
-      }
-    });
-
-    // Background messages
-    const unsubscribeBackground = messaging().onNotificationOpenedApp(remoteMessage => {
-      console.log('📲 Opened from background:', remoteMessage);
-    });
-
-    // App killed (cold start)
-    messaging().getInitialNotification().then(remoteMessage => {
-      if (remoteMessage) {
-        console.log('🚀 Opened from quit:', remoteMessage);
-      }
-    });
+    initFCM();
 
     return () => {
-      unsubscribeForeground();
-      unsubscribeBackground();
+      if (unsubscribeForeground) unsubscribeForeground();
+      if (unsubscribeBackground) unsubscribeBackground();
     };
-  }, [user]);
+  }, []); // ✅ IMPORTANT: EMPTY ARRAY
 
   useFocusEffect(
     useCallback(() => {
