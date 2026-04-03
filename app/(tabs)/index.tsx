@@ -7,6 +7,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  Alert,
   Image,
   ImageBackground,
   Modal,
@@ -85,6 +86,62 @@ function HomeScreen() {
     let unsubscribeForeground: any;
     let unsubscribeBackground: any;
 
+    const showAlert = (type: string, title: string, body: string) => {
+      const icon =
+        type === 'success'
+          ? 'success'
+          : type === 'error'
+            ? 'error'
+            : type === 'warning'
+              ? 'warning'
+              : 'info';
+
+      // @ts-ignore
+      Alert.alert(
+        title || 'Notification',
+        body || '',
+        [{ text: 'OK' }],
+        { cancelable: true }
+      );
+    };
+
+    const handleAction = (action: string, type: string, title: string, body: string) => {
+      switch (action) {
+        case 'Normal':
+          router.push('/Notification');
+          setTimeout(() => {
+            showAlert(type, title, body);
+          }, 300); // small delay
+          break;
+
+        case 'Redirect':
+          // extract order id like "#12345" from title "order no #12345"
+          const orderIdMatch = title.match(/#\d+/);
+          const orderId = orderIdMatch ? orderIdMatch[0] : '';
+
+          router.push(`/order-details/${orderId}`);
+          break;
+
+        case 'Popup':
+          router.push('/');
+          setTimeout(() => {
+            showAlert(type, title, body);
+          }, 300); // small delay
+          break;
+
+        case 'Ads':
+          router.push('/');
+          setTimeout(() => {
+            showAlert(type, title, body);
+          }, 300); // small delay
+          break;
+
+        default:
+          router.push('/');
+          showAlert(type, title, body);
+      }
+    };
+
     const initFCM = async () => {
       await createAndroidChannel();
 
@@ -98,21 +155,28 @@ function HomeScreen() {
         console.error('⚠️ Error fetching FCM token:', err);
       }
 
-      // ✅ register listeners ONLY ONCE
+      // ✅ Foreground
       unsubscribeForeground = messaging().onMessage(async remoteMessage => {
         console.log('📩 Foreground message:', remoteMessage);
+
+        const action = String(remoteMessage.data?.action ?? 'Normal');
+        const type = String(remoteMessage.data?.type ?? 'info');
+        const title = remoteMessage.notification?.title ?? '';
+        const body = remoteMessage.notification?.body ?? '';
+
+        handleAction(action, type, title, body);
 
         if (remoteMessage.notification) {
           await Notifications.scheduleNotificationAsync({
             content: {
-              title: remoteMessage.notification.title || 'No title',
-              body: remoteMessage.notification.body || 'No body',
+              title: title || 'No title',
+              body: body || 'No body',
               sound: 'default',
               attachments: [
                 {
                   url: 'https://ubertravelagency.com/img/general/ubertravelagency-light.svg',
                   identifier: null,
-                  type: null
+                  type: null,
                 },
               ],
             },
@@ -121,13 +185,29 @@ function HomeScreen() {
         }
       });
 
+      // ✅ Background
       unsubscribeBackground = messaging().onNotificationOpenedApp(remoteMessage => {
         console.log('📲 Opened from background:', remoteMessage);
+
+        const action = String(remoteMessage.data?.action ?? 'Normal');
+        const type = String(remoteMessage.data?.type ?? 'info');
+        const title = remoteMessage.notification?.title ?? '';
+        const body = remoteMessage.notification?.body ?? '';
+
+        handleAction(action, type, title, body);
       });
 
+      // ✅ Quit state
       messaging().getInitialNotification().then(remoteMessage => {
         if (remoteMessage) {
           console.log('🚀 Opened from quit:', remoteMessage);
+
+          const action = String(remoteMessage.data?.action ?? 'Normal');
+          const type = String(remoteMessage.data?.type ?? 'info');
+          const title = remoteMessage.notification?.title ?? '';
+          const body = remoteMessage.notification?.body ?? '';
+
+          handleAction(action, type, title, body);
         }
       });
     };
@@ -138,7 +218,7 @@ function HomeScreen() {
       if (unsubscribeForeground) unsubscribeForeground();
       if (unsubscribeBackground) unsubscribeBackground();
     };
-  }, []); // ✅ IMPORTANT: EMPTY ARRAY
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
