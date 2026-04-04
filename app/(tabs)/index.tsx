@@ -7,7 +7,6 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { observer } from 'mobx-react-lite';
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Alert,
   Image,
   ImageBackground,
   Modal,
@@ -21,6 +20,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import CustomAlertModal from '../../components/CustomAlertModal';
 import '../firebase';
 import { useUser } from '../usercontext/UserContext';
 
@@ -71,6 +71,12 @@ function HomeScreen() {
   const [soonVisible, setSoonVisible] = useState(false);
   const { user, clearUser } = useUser();
   const [storedToken, setStoredToken] = useState<string | null>(null);
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertData, setAlertData] = useState({
+    title: '',
+    message: '',
+    type: 'info' as 'success' | 'error' | 'warning' | 'info',
+  });
 
   // Load local token
   useEffect(() => {
@@ -87,22 +93,12 @@ function HomeScreen() {
     let unsubscribeBackground: any;
 
     const showAlert = (type: string, title: string, body: string) => {
-      const icon =
-        type === 'success'
-          ? 'success'
-          : type === 'error'
-            ? 'error'
-            : type === 'warning'
-              ? 'warning'
-              : 'info';
-
-      // @ts-ignore
-      Alert.alert(
-        title || 'Notification',
-        body || '',
-        [{ text: 'OK' }],
-        { cancelable: true }
-      );
+      setAlertData({
+        title: title || 'Notification',
+        message: body || '',
+        type: type as any,
+      });
+      setAlertVisible(true);
     };
 
     const handleAction = (action: string, type: string, title: string, body: string) => {
@@ -459,6 +455,13 @@ function HomeScreen() {
           </View>
         </ScrollView>
       </ImageBackground>
+      <CustomAlertModal
+        visible={alertVisible}
+        title={alertData.title}
+        message={alertData.message}
+        type={alertData.type}
+        onClose={() => setAlertVisible(false)}
+      />
     </SafeAreaView>
   );
 }
