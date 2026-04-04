@@ -1,6 +1,6 @@
 // app/Contact.tsx
+import AppHeader from "@/components/AppHeader";
 import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import React, { useEffect, useRef } from "react";
 import {
   Alert,
@@ -61,13 +61,10 @@ export default function ContactScreen() {
         style={styles.background}
         resizeMode="cover"
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Contact Us</Text>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="close" size={24} color="#000" />
-          </TouchableOpacity>
-        </View>
+        <AppHeader
+          title="Contact Us"
+          logo={require("../assets/images/utravelagency-light.png")}
+        />
 
         {/* Content */}
         <ScrollView
@@ -124,20 +121,6 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
     justifyContent: "center",
-  },
-  header: {
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#ffffffcc",
-    borderBottomWidth: 0.5,
-    borderColor: "#ddd",
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: "700",
-    color: "#333",
   },
   container: {
     padding: 20,

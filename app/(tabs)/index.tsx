@@ -72,6 +72,7 @@ function HomeScreen() {
   const { user, clearUser } = useUser();
   const [storedToken, setStoredToken] = useState<string | null>(null);
   const [alertVisible, setAlertVisible] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(0);
   const [alertData, setAlertData] = useState({
     title: '',
     message: '',
@@ -104,7 +105,7 @@ function HomeScreen() {
     const handleAction = (action: string, type: string, title: string, body: string) => {
       switch (action) {
         case 'Normal':
-          router.push('/Notification');
+          //router.push('/Notification');
           setTimeout(() => {
             showAlert(type, title, body);
           }, 300); // small delay
@@ -161,6 +162,11 @@ function HomeScreen() {
         const body = remoteMessage.notification?.body ?? '';
 
         handleAction(action, type, title, body);
+
+        // Increase badge for all except Ads
+        if (action !== 'Ads') {
+          setNotificationCount(prev => prev + 1);
+        }
 
         if (remoteMessage.notification) {
           await Notifications.scheduleNotificationAsync({
@@ -340,21 +346,48 @@ function HomeScreen() {
             style={styles.image}
             resizeMode="contain"
           />
-          {user ? (
-            <View style={styles.loggedInRow}>
-              <Text style={styles.welcomeText}>Hi, {user.firstName} {user.lastName}</Text>
-              <Pressable
-                style={styles.logoutButton}
-                onPress={() => logout()}
-              >
-                <Feather name="log-out" size={24} color="#333" />
-              </Pressable>
-            </View>
-          ) : (
-            <TouchableOpacity onPress={() => router.push('/admin-login')}>
-              <Feather name="user" size={24} color="#333" />
-            </TouchableOpacity>
-          )}
+
+          <View style={styles.rightSection}>
+
+            {/* 🔔 Notification Icon (always visible) */}
+            <Pressable
+              style={styles.notificationButton}
+              onPress={() => {
+                router.push('/Notification');
+                setNotificationCount(0); // reset when user opens notifications
+              }}
+            >
+              <View style={{ width: 24, height: 24 }}>
+                <Feather name="bell" size={24} color="#333" />
+                {notificationCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {notificationCount > 99 ? '99+' : notificationCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </Pressable>
+
+            {user ? (
+              <View style={styles.loggedInRow}>
+                <Text style={styles.welcomeText}>
+                  Hi, {user.firstName} {user.lastName}
+                </Text>
+                <Pressable
+                  style={styles.logoutButton}
+                  onPress={() => logout()}
+                >
+                  <Feather name="log-out" size={24} color="#333" />
+                </Pressable>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => router.push('/admin-login')}>
+                <Feather name="user" size={24} color="#333" />
+              </TouchableOpacity>
+            )}
+
+          </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.container}>
@@ -480,6 +513,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+
+  notificationButton: {
+    marginRight: 10,
   },
   image: { width: 160, height: 60 },
   loggedInRow: { flexDirection: 'row', alignItems: 'center' },
@@ -676,5 +718,25 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '600',
+  },
+
+  badge: {
+    position: 'absolute',
+    top: -5,
+    right: -5,
+    backgroundColor: '#cc3093',
+    borderRadius: 10,
+    minWidth: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    zIndex: 10,
+  },
+
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

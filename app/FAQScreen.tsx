@@ -1,5 +1,5 @@
+import AppHeader from '@/components/AppHeader';
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import React, { useState } from 'react';
 import {
   Animated,
@@ -67,10 +67,10 @@ const FAQScreen = () => {
         style={styles.background}
         resizeMode="cover"
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>FAQ</Text>
-          <Ionicons name="close" size={28} color="#111827" onPress={() => router.back()} />
-        </View>
+        <AppHeader
+          title="FAQ"
+          logo={require("../assets/images/utravelagency-light.png")}
+        />
 
         <ScrollView contentContainerStyle={styles.container}>
           <Text style={styles.subtitle}>Frequently Asked Questions</Text>
@@ -118,27 +118,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F3F4F6',
   },
-  header: {
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#ffffff",
-    borderBottomWidth: 0.5,
-    borderColor: "#e5e5e5",
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 3 },
-    elevation: 3,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#111827",
-    fontFamily: 'PentaRounded-SemiBold',
-  },
   container: {
     paddingVertical: 20,
     paddingHorizontal: 24,
@@ -155,7 +134,7 @@ const styles = StyleSheet.create({
     padding: 18,
     borderRadius: 16,
     marginBottom: 16,
-    marginTop:8,
+    marginTop: 8,
     shadowColor: '#000',
     shadowOpacity: 0.05,
     shadowRadius: 8,

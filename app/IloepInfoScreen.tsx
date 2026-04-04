@@ -1,7 +1,6 @@
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import AppHeader from '@/components/AppHeader';
 import React from 'react';
-import { Button, ImageBackground, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Button, ImageBackground, Linking, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const IloepInfoScreen = () => {
@@ -16,10 +15,11 @@ const IloepInfoScreen = () => {
         style={styles.background}
         resizeMode="cover"
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>ILOEP</Text>
-          <Ionicons name="close" size={24} onPress={() => router.back()} />
-        </View>
+        
+        <AppHeader
+          title="ILOEP"
+          logo={require("../assets/images/utravelagency-light.png")}
+        />
 
         <ScrollView contentContainerStyle={styles.container}>
           <Text style={styles.heading}>ILOEP – Involuntary Loss of Employment Protection</Text>
@@ -66,11 +66,6 @@ const styles = StyleSheet.create({
   background: {
     flex: 1,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#000",
-  },
   closeButton: {
     position: 'absolute',
     top: 0,
@@ -80,16 +75,6 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: 'center',
     marginBottom: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between', // ⬅️ separates logo & icon
-    paddingVertical: 5,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    backgroundColor: 'rgba(255, 255, 255, 0.8)', // with some opacity
   },
   container: {
     padding: 20,
