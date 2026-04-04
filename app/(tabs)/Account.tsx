@@ -66,6 +66,15 @@ function Account() {
         style={styles.background}
       >
         <View style={styles.container}>
+          {/* Logo at the top */}
+          <View style={styles.logoTopWrapper}>
+            <Image
+              source={require("../../assets/images/utravelagency-light.png")}
+              style={styles.logoTop}
+              resizeMode="contain"
+            />
+          </View>
+
           {/* Profile Card */}
           {user ? (
             <View style={styles.profileCard}>
@@ -276,7 +285,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   nameTextWelcome: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "700",
     color: "#333",
   },
@@ -373,5 +382,14 @@ const styles = StyleSheet.create({
   deleteText: {
     color: "#fff",
     fontWeight: "700",
+  },
+  logoTopWrapper: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+
+  logoTop: {
+    width: 220,
+    height: 100,
   },
 });
